@@ -97,6 +97,7 @@ let options = {
 ```
 
 ### Postgres
+
 Connection String: `const connectionString = process.env.DB_CONN || 'postgres://user:password@localhost:5432/name-of-database';
 `
 
@@ -136,6 +137,7 @@ Response:
     "updatedAt": "2013-12-31T00:00:00.000Z"
   }]
 ```
+
 Method: `GET`
 Endpoint: `http://localhost:3000/api/v1/<model>/id/2`
 Response:
@@ -148,7 +150,6 @@ Response:
     "updatedAt": "2013-12-31T00:00:00.000Z"
 }
 ```
-
 Method: `DELETE`
 Endpoint: `http://localhost:3000/api/v1/<model>/id/2`
 
@@ -180,6 +181,7 @@ Request:
     "createdAt": "2013-12-31T00:00:00.000Z",
     "updatedAt": "2013-12-31T00:00:00.000Z"
   }
+```
 Response:
 ```
 {
