@@ -40,6 +40,24 @@ create table
 
 The API uses express-jwt, jwt and bcrypt to lock down all the endpoints. When a user is authenticated, they are given a encryption key to access the the api data. 
 
+## Setup
+To setup the api, using mongo, specify the mongo connection string and options object. See Options below
+
+For Postgres, first create an empty database, then build your models. This will automatically create the tables.
+
+OR connect to an existing database with the postgres connection string and options object. See below.
+
+You will still need to build your models ie. create a someModel.ts file within the models directory and export it in the index.ts file.
+
+For example, if you want to create a new model and its corresponding table in the database called "Car", create a file named Car.ts, specify the schema then export the Car class in index.ts file. 
+
+If the "Car" table already exists, then the API will do nothing, (it will not create a new "Car" table) on startup
+
+`git clone https://github.com/Endtry/TSExpressAPI.git`
+`npm install`
+`gulp scripts`
+`npm start`
+
 ## User Model
 
 By default, the API has a default User Model that has two basic controller methods and endpoint: 
