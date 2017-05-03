@@ -9,6 +9,7 @@ class User extends baseModel_1.BaseModel {
     constructor(options) {
         // call the super class and create the model
         super(options, 'User', {
+            email: { type: String },
             username: { type: String },
             password: { type: String },
             role: { type: Array },
@@ -17,18 +18,30 @@ class User extends baseModel_1.BaseModel {
         this.options = options;
         // override controller methods here
         this.isSuperAdmin = (req, res, next) => {
-            console.log('from userModel r');
-            this.model.findById(req.params.id, (err, resp) => {
-                if (!err) {
-                    console.log('resp', resp);
-                    res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
-                }
-                else {
-                    res.status(500).send(this.model.controller.sendError(500, err));
-                }
-            });
+            if (this.options.dbType == 'mongo') {
+                console.log('from userModel r');
+                this.model.findById(req.params.id, (err, resp) => {
+                    if (!err) {
+                        console.log('resp', resp);
+                        res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
+                    }
+                    else {
+                        res.status(500).send(this.model.controller.sendError(500, err));
+                    }
+                });
+            }
+            else if (this.options.dbType == 'postgres') {
+                api_1.API.db.query(`select "isSuperAdmin" from "User" where id='${req.params.id}'`, null, (err, user) => {
+                    if (err) {
+                        console.log('error', err);
+                        res.status(500).send(this.model.controller.sendError(500, err));
+                    }
+                    else {
+                        res.json({ isSuperAdmin: user.rows[0] });
+                    }
+                });
+            }
         };
-        //TODO...
         this.login = (req, res, next) => {
             if (this.options.dbType == 'mongo') {
                 this.model.findOne({ email: req.body.email }, (err, user) => {

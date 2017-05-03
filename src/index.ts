@@ -3,8 +3,7 @@ import * as debug from 'debug';
 import { API } from './api';
 import express = require('express');
 
-//debug('ts-express:server');
-const connectionString = process.env.DB_CONN || 'postgres://postgres:Mai2Lucas@localhost:5432/sales-specialty-lucas';
+const connectionString = process.env.DB_CONN;
 //const connectionString = process.env.DB_CONN || 'mongodb://localhost/bookAPI';
 
 let port: number = process.env.PORT || 3000;
@@ -22,9 +21,9 @@ let options = {
 */
 let options = {
   dbType: 'postgres',
-  dbName: 'sales-specialty-lucas',
-  user: 'postgres',
-  password: 'Mai2Lucas',
+  dbName: process.env.dbName,
+  user: process.env.dbUser,
+  password: process.env.dbPassword,
   host: 'localhost',
   port: 5432,
   connectionString: connectionString

@@ -321,7 +321,7 @@ export class PSQLWrapper {
         delete req.body.where;
         const bundle = req.body;
         let keyValues = this.prepareObject(bundle);
-        let query = `UPDATE "${this.table}" SET ${keyValues} WHERE ${where} RETURNING id;`;
+        let query = `UPDATE "${this.table}" as ${leftAlias} SET ${keyValues} WHERE ${where} RETURNING id;`;
         console.log('query', query);
         this.exec(req, res, next, (client: any, done: any) => {
             client.query(query, (err: any, resp: any) => {
