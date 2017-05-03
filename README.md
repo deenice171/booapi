@@ -209,7 +209,8 @@ There are two flexible endpoints to update and select anything the user specify 
 
 will produce and execute the sql command 
 
-```UPDATE "Tank" as _tank SET "serialNumber"=123,"updatedAt"='2017-04-24' WHERE "_tank"."isActive"=0 AND "_tank"."id"=731 RETURNING id 
+```
+UPDATE "Tank" as _tank SET "serialNumber"=123,"updatedAt"='2017-04-24' WHERE "_tank"."isActive"=0 AND "_tank"."id"=731 RETURNING id 
 ```
 
 Method: `POST`
@@ -240,9 +241,7 @@ Response:
   ]
 }
 ```
-
 The second flexible endpoints retrieve any data the user specify within the request object. For example, a request payload of:
-
 ```
 {
   "get": ["*"],
