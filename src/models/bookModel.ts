@@ -9,7 +9,7 @@ export class Book extends BaseModel {
 
     constructor(public options: any) {
         // call the super class and create the model
-        super(options, 'Book', { // must use mongoose.Schema syntax
+        super(options, 'Book', { 
             id: { type: Number, key: 'primary' },
             title: { type: String, maxlength: 24 },
             author: { type: String, maxlength: 24 },

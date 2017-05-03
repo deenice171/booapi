@@ -13,6 +13,7 @@ export class User extends BaseModel {
     constructor(public options: any) {
         // call the super class and create the model
         super(options, 'User', { // must use mongoose.Schema syntax
+            email: { type: String },
             username: { type: String },
             password: { type: String },
             role: { type: Array },
@@ -28,17 +29,29 @@ export class User extends BaseModel {
 
     // override controller methods here
     isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
-        console.log('from userModel r');
-        this.model.findById(req.params.id, (err: any, resp: any) => {
-            if (!err) {
-                console.log('resp', resp);
-                res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
-            } else {
-                res.status(500).send(this.model.controller.sendError(500, err));
-            }
-        });
+        if (this.options.dbType == 'mongo') {
+            console.log('from userModel r');
+            this.model.findById(req.params.id, (err: any, resp: any) => {
+                if (!err) {
+                    console.log('resp', resp);
+                    res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
+                } else {
+                    res.status(500).send(this.model.controller.sendError(500, err));
+                }
+            });
+        } else if (this.options.dbType == 'postgres') {
+            API.db.query(`select "isSuperAdmin" from "User" where id='${req.params.id}'`, null, (err: any, user: any) => {
+                if (err) {
+                    console.log('error', err);
+                    res.status(500).send(this.model.controller.sendError(500, err));
+                } else {
+                    res.json({ isSuperAdmin: user.rows[0] });
+                }
+            });
+        }
+
     }
-    //TODO...
+
     login = (req: Request, res: Response, next: NextFunction) => {
         if (this.options.dbType == 'mongo') {
             this.model.findOne({ email: req.body.email }, (err: any, user: any) => {
@@ -54,7 +67,6 @@ export class User extends BaseModel {
                                 user: user
                             });
                         }
-
                     })
                 } else {
                     res.status(404).send(this.model.controller.sendError(404, err));
@@ -68,9 +80,7 @@ export class User extends BaseModel {
                     return err;
                 } else {
                     console.log('from query user', user.rows);
-                    
                     bcrypt.compare(req.body.password, user.rows[0].password, (err: any, resp: any) => {
-                        
                         console.log('resp', resp);
                         if (!resp) {
                             res.status(500).send({ message: 'Incorrect password' })

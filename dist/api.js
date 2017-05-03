@@ -1,14 +1,17 @@
 "use strict";
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-// import all the models in index file
 const Models = require('./models/index');
+// cors
 const cors = require('cors');
+// mongoose
 const mongoose = require('mongoose');
+// api authentication
 const passport = require('passport');
 const Strategy = require('passport-local');
 const expressJWT = require('express-jwt');
 const bcrypt = require('bcrypt');
+// environment variable
 const envFile = require('../.env');
 const dotEnv = require('dotenv').load(envFile);
 class API {
@@ -16,8 +19,7 @@ class API {
         this.app = app;
         this.port = port;
         this.options = options;
-        // app = express();
-        this.init(app, options);
+        this.initialize(app, options);
     }
     configureDatabase(options) {
         switch (options.dbType) {
@@ -146,7 +148,7 @@ class API {
             origin: corsHostnameWhitelist
         }));
     }
-    init(app, options) {
+    initialize(app, options) {
         this.configureDatabase(options);
         this.configureMiddleware(app);
         //this.configurePassport(app);
