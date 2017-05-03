@@ -75,6 +75,13 @@ Response:
   }
 }
 ```
+
+## Authorization
+
+Once authenticated, the user will get a hashed token. On every API request thereafter, authorization header must be set. Eg.
+
+Authorization: 'Bearer xxxxxx' where xxxxxx is the token received from the login success response.
+
 ## Options
 
 The API currently supports MongoDB and Postgres. The database configuration is in the .env file and is read in bu the index.ts file.
@@ -249,7 +256,7 @@ The second flexible endpoints retrieve any data the user specify within the requ
         "DeliveryOrder": "tankId",
         "on": "id",
         "as": "deliveryOrders",
-        "left_inner_join":{
+        "left_outer_join":{
         	"Product":"id",
         	"on":"productId",
         	"as":"product"
@@ -277,7 +284,7 @@ The second flexible endpoints retrieve any data the user specify within the requ
 will produce and execute the following sql command
 
 ```
-SELECT "_tank".*, json_agg("_deliveryorder".*) AS "DeliveryOrder" , json_agg("_workorder".*) AS "WorkOrder" FROM "Tank" as "_tank" LEFT OUTER JOIN "DeliveryOrder" as "_deliveryorder" ON ("_deliveryorder"."tankId"="_tank"."id") LEFT OUTER JOIN "WorkOrder" as "_workorder" ON("_workorder"."clientId"="_tank"."clientId") WHERE "_tank"."isActive"=1 AND "_tank"."id"=815 GROUP BY "_tank"."id" ORDER BY "_tank"."id" ASC, "_tank"."clientId" DESC
+SELECT "_tank".*, json_agg("_deliveryorder".*) AS "DeliveryOrder" , json_agg("_product".*) AS "Product" , json_agg("_workorder".*) AS "WorkOrder" FROM "Tank" as "_tank" LEFT OUTER JOIN "DeliveryOrder" as "_deliveryorder" ON("_deliveryorder"."tankId"="_tank"."id") LEFT OUTER JOIN "Product" as "_product" ON("_product"."id"="_deliveryorder"."productId") LEFT OUTER JOIN "WorkOrder" as "_workorder" ON ("_workorder"."clientId"="_tank"."clientId") WHERE "_tank"."isActive"=1 AND "_tank"."id"=815 GROUP BY "_tank"."id" ORDER BY "_tank"."id" ASC, "_tank"."clientId" DESC
 ```
 
 This endpoint supports get * or a comma separated string that corresponds to the property within the select clause.
@@ -298,7 +305,7 @@ Request:
         "DeliveryOrder": "tankId",
         "on": "id",
         "as": "deliveryOrders",
-        "left_inner_join":{
+        "left_outer_join":{
         	"Product":"id",
         	"on":"productId",
         	"as":"product"
