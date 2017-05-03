@@ -22,7 +22,7 @@ export class BaseModel {
     constructor(
         public options: any,
         public name: string,
-        public schema: any) {
+        private schema: any) {
         // this.name = name;
         this.psql = new PSQLWrapper(this.options, this.name);
         this.make(this.name, this.schema);
@@ -54,7 +54,7 @@ export class BaseModel {
         if (this.options.dbType == 'mongo') {
             // do nothing because it is managed by mongoose
         } else if (this.options.dbType == 'postgres') {
-            this.psql.create(schema, (resp: any) => {
+            this.psql.createTable(schema, (resp: any) => {
                 console.log('table', this.name, 'data', resp);
             });
         }

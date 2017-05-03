@@ -75,7 +75,7 @@ class BaseController {
             else if (this.options.dbType == 'postgres') {
                 console.log('from baseController POST postgres...');
                 this.psql.insert(req, res, next, (resp) => {
-                    res.json(resp);
+                    res.status(201).send(resp);
                 });
             }
         };
@@ -199,7 +199,6 @@ class BaseController {
         this.setError = (error) => {
             this.error.push(error);
         };
-        //super();
         //console.log('from baseController book: ', this.model);
         //console.log('this.name', this.name);
         this.psql = new postgres_wrapper_1.PSQLWrapper(this.options, this.name);

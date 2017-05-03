@@ -7,27 +7,27 @@ export class Book extends BaseModel {
 
     model: any;
 
-    constructor(public options: any) {
+    constructor(public options: any, public name:string) {
         // call the super class and create the model
-        super(options, 'Book', { 
+        super(options, name, { 
             id: { type: Number, key: 'primary' },
             title: { type: String, maxlength: 24 },
             author: { type: String, maxlength: 24 },
             genre: { type: String, maxlength: 24 },
             read: { type: Boolean, default: true },
-            noteId: { 
-                type: Number, 
-                key: 'foreign', 
-                references: { table: 'Note', foreignKey: 'id' },
-                onDelete:'cascade',
-                onUpdate:'cascade' 
-            },
+            //noteId: { 
+                //type: Number, 
+                //key: 'foreign', 
+                //references: { table: 'Note', foreignKey: 'id' },
+                //onDelete:'cascade',
+                //onUpdate:'cascade' 
+           // },
             createdAt: { type: Date },
             updatedAt: { type: Date },
             deletedAt: { type: Date }
         });
         // create a controller
-        this.model.controller = new BaseController(this.options, 'Book', this.model);
+        this.model.controller = new BaseController(this.options, this.name, this.model);
         // create a router
         this.model.router = new BaseRouter(this.model.controller);
         // initialize custom endpoints

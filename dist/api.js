@@ -68,10 +68,11 @@ class API {
         app.use(bodyParser.urlencoded({ extended: false }));
     }
     configureRoutes(app) {
+        console.log('Models', Models);
         Object.keys(Models).forEach((key, index) => {
-            // console.log('foreach model name', key);
+            console.log('foreach model name', key);
             // console.log('Models[key] = model ', Models[key]);
-            app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options).model.router.make());
+            app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options, key).model.router.make());
         });
     }
     configureJWT(app) {

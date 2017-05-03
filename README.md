@@ -94,6 +94,56 @@ Response:
 }
 ```
 
+Method: `POST`
+Endpoint: `'/find-by-email'`
+Request:
+```
+{
+	"email":"lucas@shift3tech.com"
+}
+```
+Response: 
+```
+{
+  "id": 1,
+  "email": "lucas@shift3tech.com",
+  "username": "lucas",
+  "password": "$2a$10$7/mqbffuQE4tm/arx0ud4eqG7diKWiq7K.//UXRr5VfC5Ji1nerhS",
+  "role": "admin,driver",
+  "superAdmin": true,
+  "isActivated": false,
+  "createdAt": "2017-05-03T07:00:00.000Z",
+  "updatedAt": "2017-05-03T07:00:00.000Z",
+  "deletedAt": null
+}
+```
+Method:`POST`
+Endpoint: `'/create-secure'`
+Request:
+```
+{
+	"email":"lucass11s1s@shift3tech.com",
+	"password":"abc123",
+	"username":"lucas",
+	"role":["admin", "driver"],
+	"superAdmin":true
+}
+```
+Response:
+```
+{
+  "id": 7,
+  "email": "lucass11s1s@shift3tech.com",
+  "username": "lucas",
+  "password": "$2a$10$dw1lO5nOTCMRZR4XUN0ekul5KQsy8mp5HTQRPMkInrRepA8dbspXG",
+  "role": "admin,driver",
+  "superAdmin": true,
+  "isActivated": false,
+  "createdAt": "2017-05-03T07:00:00.000Z",
+  "updatedAt": "2017-05-03T07:00:00.000Z",
+  "deletedAt": null
+}
+```
 ## Authorization
 
 Once authenticated, the user will get a hashed token. On every API request thereafter, authorization header must be set. Eg.

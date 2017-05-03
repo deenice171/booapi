@@ -3,26 +3,27 @@ const baseModel_1 = require('./baseModel');
 const baseController_1 = require('../controllers/baseController');
 const baseRouter_1 = require('../routes/baseRouter');
 class Book extends baseModel_1.BaseModel {
-    constructor(options) {
+    constructor(options, name) {
         // call the super class and create the model
-        super(options, 'Book', {
+        super(options, name, {
             id: { type: Number, key: 'primary' },
             title: { type: String, maxlength: 24 },
             author: { type: String, maxlength: 24 },
             genre: { type: String, maxlength: 24 },
             read: { type: Boolean, default: true },
-            noteId: {
-                type: Number,
-                key: 'foreign',
-                references: { table: 'Note', foreignKey: 'id' },
-                onDelete: 'cascade',
-                onUpdate: 'cascade'
-            },
+            //noteId: { 
+            //type: Number, 
+            //key: 'foreign', 
+            //references: { table: 'Note', foreignKey: 'id' },
+            //onDelete:'cascade',
+            //onUpdate:'cascade' 
+            // },
             createdAt: { type: Date },
             updatedAt: { type: Date },
             deletedAt: { type: Date }
         });
         this.options = options;
+        this.name = name;
         // override controller methods here
         this.getRead = (req, res, next) => {
             this.model.find({ read: true }, (err, resp) => {
@@ -57,7 +58,7 @@ class Book extends baseModel_1.BaseModel {
             });
         };
         // create a controller
-        this.model.controller = new baseController_1.BaseController(this.options, 'Book', this.model);
+        this.model.controller = new baseController_1.BaseController(this.options, this.name, this.model);
         // create a router
         this.model.router = new baseRouter_1.BaseRouter(this.model.controller);
         // initialize custom endpoints

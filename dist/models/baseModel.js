@@ -34,7 +34,7 @@ class BaseModel {
         if (this.options.dbType == 'mongo') {
         }
         else if (this.options.dbType == 'postgres') {
-            this.psql.create(schema, (resp) => {
+            this.psql.createTable(schema, (resp) => {
                 console.log('table', this.name, 'data', resp);
             });
         }

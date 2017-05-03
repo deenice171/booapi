@@ -19,7 +19,6 @@ export class BaseController {
         public name: string, // the table name ie Tank
         public model: any
     ) {
-        //super();
         //console.log('from baseController book: ', this.model);
         //console.log('this.name', this.name);
         this.psql = new PSQLWrapper(this.options, this.name);
@@ -85,7 +84,7 @@ export class BaseController {
         } else if (this.options.dbType == 'postgres') {
             console.log('from baseController POST postgres...');
             this.psql.insert(req, res, next, (resp: any) => {
-                res.json(resp);
+                res.status(201).send(resp);
             });
         }
 

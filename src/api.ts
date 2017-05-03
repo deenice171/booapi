@@ -89,10 +89,11 @@ export class API {
     }
 
     private configureRoutes(app: express.Express): void {
+        console.log('Models', Models);
         Object.keys(Models).forEach((key: any, index: number) => {
-            // console.log('foreach model name', key);
+            console.log('foreach model name', key);
             // console.log('Models[key] = model ', Models[key]);
-            app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options).model.router.make());
+            app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options, key).model.router.make());
         });
     }
 

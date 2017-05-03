@@ -55,9 +55,9 @@ export class PSQLWrapper {
             if (obj.hasOwnProperty(key)) {
                 //console.log('objkehy', obj[key]);
                 let type = obj[key].type != null ? obj[key].type : false;
-                let keyType = obj[key].key || false;
-                let maxLength = obj[key].maxlength || 50; // default to 50
-                let defaultVal = obj[key].default || true;
+                let keyType = obj[key].key != null ? obj[key].key : false;
+                let maxLength = obj[key].maxlength != null ? obj[key].maxlength : 100; // default to 50
+                let defaultVal = obj[key].default != null ? obj[key].default : false;
                 let foreignTable = obj[key].references != null ? obj[key].references.table : false;
                 let foreignKey = obj[key].references != null ? obj[key].references.foreignKey : false;
                 let onDelete = obj[key].onDelete != null ? obj[key].onDelete : false;
@@ -95,7 +95,7 @@ export class PSQLWrapper {
         return result;
     }
 
-    create(schema: any, callback: Function) {
+    createTable(schema: any, callback: Function) {
         let checkIfExist = `select count(*) from pg_class where relname='${this.table}' and relkind='r'`
         this.query(checkIfExist, (resp: any) => {
             if (!resp) {
@@ -357,20 +357,26 @@ export class PSQLWrapper {
     }
 
     convert(value: any) {
-        switch (typeof value) {
-            case 'number':
-                return parseInt(value);
-            case 'string':
-                return `'${value.trim()}'`;
-            case 'object':
-                return value;
-            case 'boolean':
-                return value;
-            case null:
-                return null;
-            default:
-                return value;
+        let isArray = value.constructor === Array;
+        if (isArray) {
+            return `'${value.join()}'`; // turn array of string into a single comma separated string.
+        } else {
+            switch (typeof value) {
+                case 'number':
+                    return parseInt(value);
+                case 'string':
+                    return `'${value.trim()}'`;
+                case 'object':
+                    return value;
+                case 'boolean':
+                    return value;
+                case null:
+                    return null;
+                default:
+                    return value;
+            }
         }
+
     }
 
     // split object into key vaule string
