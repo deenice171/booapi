@@ -1,3 +1,7 @@
+/*
+    The base router that all other router extends from
+*/
+
 import { Router, Request, Response, NextFunction } from 'express';
 import { BaseController } from '../controllers/baseController';
 
@@ -7,8 +11,6 @@ export class BaseRouter {
 
     constructor(public controller: BaseController) {
         this.router = Router();
-        // console.log('this.controller', this.controller);
-        // console.log('Book', new Book());
     }
 
     make() {
@@ -28,7 +30,7 @@ export class BaseRouter {
 
         this.router.route('/get') // get anything
             .post(this.controller.get);
-            
+
         return this.router;
     }
 

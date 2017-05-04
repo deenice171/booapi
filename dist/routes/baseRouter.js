@@ -1,11 +1,12 @@
+/*
+    The base router that all other router extends from
+*/
 "use strict";
 const express_1 = require('express');
 class BaseRouter {
     constructor(controller) {
         this.controller = controller;
         this.router = express_1.Router();
-        // console.log('this.controller', this.controller);
-        // console.log('Book', new Book());
     }
     make() {
         this.router.use('/id/:id', this.controller.findByIdInterceptor);

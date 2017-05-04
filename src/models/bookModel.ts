@@ -1,3 +1,8 @@
+/*
+    An example model with custom controller methods override
+    and router extensions
+*/
+
 import { BaseModel } from './baseModel';
 import { BaseController } from '../controllers/baseController';
 import { BaseRouter } from '../routes/baseRouter';

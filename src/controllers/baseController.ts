@@ -1,12 +1,9 @@
+/*
+    The base controller file containing default controller methods
+*/
+
 import { Router, Request, Response, NextFunction } from 'express';
-import { BaseModel } from '../models/baseModel';
-
 import { PSQLWrapper } from '../wrapper/postgres.wrapper';
-
-//postgres stuff
-const pg = require('pg');
-const connectionString = process.env.DB_CONN || 'postgres://postgres:Mai2Lucas@localhost:5432/sales-specialty-lucas';
-const client = new pg.Client(connectionString);
 
 export class BaseController {
 

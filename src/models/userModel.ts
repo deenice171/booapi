@@ -1,3 +1,7 @@
+/*
+    The default user model is required by the application
+*/
+
 import { BaseModel } from './baseModel';
 import { BaseController } from '../controllers/baseController';
 import { BaseRouter } from '../routes/baseRouter';
@@ -11,7 +15,7 @@ import { API } from '../api';
 
 export class User extends BaseModel {
     model: any;
-    constructor(public options: any, public name:string) {
+    constructor(public options: any, public name: string) {
         // call the super class and create the model
         super(options, name, { // must use mongoose.Schema syntax
             id: { type: Number, key: 'primary' },
@@ -36,10 +40,8 @@ export class User extends BaseModel {
     // override controller methods here
     isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
         if (this.options.dbType == 'mongo') {
-            console.log('from userModel r');
             this.model.findById(req.params.id, (err: any, resp: any) => {
                 if (!err) {
-                    console.log('resp', resp);
                     res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
                 } else {
                     res.status(500).send(this.model.controller.sendError(500, err));
@@ -70,7 +72,6 @@ export class User extends BaseModel {
             } else if (this.options.dbType == 'postgres') {
                 API.db.query(`select * from "${this.name}" where email='${req.body.email}'`, null, (err: any, user: any) => {
                     if (user.rows.length == 0) {
-                        console.log('error', err);
                         resolve({ errorCode: 500, errorMessage: 'find by email error!' });
                     } else {
                         //res.json(user.rows[0]);
@@ -89,14 +90,10 @@ export class User extends BaseModel {
 
     createSecureUser = (req: Request, res: Response, next: NextFunction) => {
         this.findUser(req, res, next).then((user) => {
-            console.log('user from createUser', user);
             if (user['errorCode'] == 500) { // user not exist
-                console.log('creating user now....... user: ', user);
                 let dirtyPassword = req.body['password'];
-                console.log('dirty pass', dirtyPassword);
                 bcrypt.hash(dirtyPassword, saltRounds).then((hash: any) => {
                     // Store hash in your password DB.
-                    console.log('hash', hash);
                     req.body['password'] = hash;
                     this.model.controller.insert(req, res, next);
                 });
@@ -128,15 +125,11 @@ export class User extends BaseModel {
                 }
             });
         } else if (this.options.dbType == 'postgres') {
-            console.log('here...');
             API.db.query(`select * from "${this.name}" where email='${req.body.email}'`, null, (err: any, user: any) => {
                 if (err) {
-                    console.log('error', err);
-                    return err;
+                    res.status(500).send({ message: err })
                 } else {
-                    console.log('from query user', user.rows);
                     bcrypt.compare(req.body.password, user.rows[0].password, (err: any, resp: any) => {
-                        console.log('resp', resp);
                         if (!resp) {
                             res.status(500).send({ message: 'Incorrect password' })
                         } else {

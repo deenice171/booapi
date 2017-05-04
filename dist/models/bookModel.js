@@ -1,3 +1,7 @@
+/*
+    An example model with custom controller methods override
+    and router extensions
+*/
 "use strict";
 const baseModel_1 = require('./baseModel');
 const baseController_1 = require('../controllers/baseController');

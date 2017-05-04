@@ -1,3 +1,6 @@
+/*
+    The default user model is required by the application
+*/
 "use strict";
 const baseModel_1 = require('./baseModel');
 const baseController_1 = require('../controllers/baseController');
@@ -26,10 +29,8 @@ class User extends baseModel_1.BaseModel {
         // override controller methods here
         this.isSuperAdmin = (req, res, next) => {
             if (this.options.dbType == 'mongo') {
-                console.log('from userModel r');
                 this.model.findById(req.params.id, (err, resp) => {
                     if (!err) {
-                        console.log('resp', resp);
                         res.json(this.model.controller.send(200, { isSuperAdmin: resp.superAdmin }));
                     }
                     else {
@@ -56,14 +57,10 @@ class User extends baseModel_1.BaseModel {
         };
         this.createSecureUser = (req, res, next) => {
             this.findUser(req, res, next).then((user) => {
-                console.log('user from createUser', user);
                 if (user['errorCode'] == 500) {
-                    console.log('creating user now....... user: ', user);
                     let dirtyPassword = req.body['password'];
-                    console.log('dirty pass', dirtyPassword);
                     bcrypt.hash(dirtyPassword, saltRounds).then((hash) => {
                         // Store hash in your password DB.
-                        console.log('hash', hash);
                         req.body['password'] = hash;
                         this.model.controller.insert(req, res, next);
                     });
@@ -98,16 +95,12 @@ class User extends baseModel_1.BaseModel {
                 });
             }
             else if (this.options.dbType == 'postgres') {
-                console.log('here...');
                 api_1.API.db.query(`select * from "${this.name}" where email='${req.body.email}'`, null, (err, user) => {
                     if (err) {
-                        console.log('error', err);
-                        return err;
+                        res.status(500).send({ message: err });
                     }
                     else {
-                        console.log('from query user', user.rows);
                         bcrypt.compare(req.body.password, user.rows[0].password, (err, resp) => {
-                            console.log('resp', resp);
                             if (!resp) {
                                 res.status(500).send({ message: 'Incorrect password' });
                             }
@@ -144,7 +137,6 @@ class User extends baseModel_1.BaseModel {
             else if (this.options.dbType == 'postgres') {
                 api_1.API.db.query(`select * from "${this.name}" where email='${req.body.email}'`, null, (err, user) => {
                     if (user.rows.length == 0) {
-                        console.log('error', err);
                         resolve({ errorCode: 500, errorMessage: 'find by email error!' });
                     }
                     else {

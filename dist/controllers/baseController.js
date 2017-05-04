@@ -1,9 +1,8 @@
+/*
+    The base controller file containing default controller methods
+*/
 "use strict";
 const postgres_wrapper_1 = require('../wrapper/postgres.wrapper');
-//postgres stuff
-const pg = require('pg');
-const connectionString = process.env.DB_CONN || 'postgres://postgres:Mai2Lucas@localhost:5432/sales-specialty-lucas';
-const client = new pg.Client(connectionString);
 class BaseController {
     constructor(options, name, // the table name ie Tank
         model) {
