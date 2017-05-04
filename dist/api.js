@@ -60,7 +60,6 @@ class API {
                 console.log('database default to postgres');
                 break;
         }
-        // console.log('todo configuring databaser...... db: ', db);
     }
     configureMiddleware(app) {
         app.use(logger('dev'));
@@ -68,15 +67,11 @@ class API {
         app.use(bodyParser.urlencoded({ extended: false }));
     }
     configureRoutes(app) {
-        console.log('Models', Models);
         Object.keys(Models).forEach((key, index) => {
-            console.log('foreach model name', key);
-            // console.log('Models[key] = model ', Models[key]);
             app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options, key).model.router.make());
         });
     }
     configureJWT(app) {
-        console.log('process.env.JWT_SECRET', process.env.JWT_SECRET);
         app.use('/', expressJWT({
             secret: process.env.JWT_SECRET,
             credentialsRequired: true,
@@ -93,57 +88,8 @@ class API {
             path: [/\/api\/v1\/user\/login(?!\/renew)/, /\/api\/v1\/user\/reset-password/, /\/api\/v1\/user\/forgot-password/]
         }));
     }
-    configurePassport(app) {
-        console.log('this.options.dbType', this.options.dbType);
-        app.use(passport.initialize());
-        passport.use('local', new Strategy({
-            usernameField: 'email',
-            passwordField: 'password'
-        }, (email, password, done) => {
-            if (this.options.dbType == 'mongo') {
-                let user = mongoose.model('User');
-                console.log('user---------->', user);
-                user.findOne({ email })
-                    .populate([{ path: "role", model: "Role" }, { path: "provider", model: "Provider" }])
-                    .then((user) => {
-                    if (!user) {
-                        return done(null, false, { message: 'Incorrect username.' });
-                    }
-                    else {
-                        bcrypt.compare(password, user.password, (err, res) => {
-                            if (!res) {
-                                return done(null, false, { message: 'Incorrect password' });
-                            }
-                            return done(null, user);
-                        });
-                    }
-                });
-            }
-            else if (this.options.dbType == 'postgres') {
-                console.log('here...');
-                API.db.query(`select * from USER where email=${email}`, null, (err, user) => {
-                    if (err) {
-                        console.log('error', err);
-                        return err;
-                    }
-                    else {
-                        console.log('from query user', user);
-                        bcrypt.compare(password, user[0].password, (err, res) => {
-                            if (!res) {
-                                return done(null, false, { message: 'Incorrect password' });
-                            }
-                            else {
-                                return done(null, user);
-                            }
-                        });
-                    }
-                });
-            }
-        }));
-    }
     configureCors(app) {
         app.options('*', cors());
-        // Allow requests from any localhost -- on any port
         const corsHostnameWhitelist = [/http:\/\/localhost(?::\d{1,5})?$/];
         app.use(cors({
             origin: corsHostnameWhitelist
@@ -152,7 +98,6 @@ class API {
     initialize(app, options) {
         this.configureDatabase(options);
         this.configureMiddleware(app);
-        //this.configurePassport(app);
         this.configureJWT(app);
         this.configureRoutes(app);
         this.configureCors(app);

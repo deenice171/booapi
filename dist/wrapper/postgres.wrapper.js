@@ -1,13 +1,10 @@
 "use strict";
-const pg = require('pg');
 const api_1 = require('../api');
 class PSQLWrapper {
     constructor(options, table) {
         this.options = options;
         this.table = table;
         Object.assign(this, this.options);
-        console.log('table=====-====>', table);
-        // this.client = new pg.Client(this.options.connectionString);
         this.client = api_1.API.db;
     }
     connect(callback) {
@@ -31,8 +28,6 @@ class PSQLWrapper {
                 callback(err); // TODO callback with both err and resp object
             }
             else {
-                // console.log('from query resp', resp);
-                //return res.json(resp.rows);
                 callback(resp); // TODO callback with both err and resp object
             }
         });
@@ -43,14 +38,8 @@ class PSQLWrapper {
         for (let key in obj) {
             if (obj.hasOwnProperty(key)) {
                 //console.log('objkehy', obj[key]);
-                let type = obj[key].type != null ? obj[key].type : false;
-                let keyType = obj[key].key != null ? obj[key].key : false;
-                let maxLength = obj[key].maxlength != null ? obj[key].maxlength : 100; // default to 50
-                let defaultVal = obj[key].default != null ? obj[key].default : false;
-                let foreignTable = obj[key].references != null ? obj[key].references.table : false;
-                let foreignKey = obj[key].references != null ? obj[key].references.foreignKey : false;
-                let onDelete = obj[key].onDelete != null ? obj[key].onDelete : false;
-                let onUpdate = obj[key].onUpdate != null ? obj[key].onUpdate : false;
+                let type = obj[key].type != null ? obj[key].type : false, keyType = obj[key].key != null ? obj[key].key : false, maxLength = obj[key].maxlength != null ? obj[key].maxlength : 100, // default to 50
+                defaultVal = obj[key].default != null ? obj[key].default : false, foreignTable = obj[key].references != null ? obj[key].references.table : false, foreignKey = obj[key].references != null ? obj[key].references.foreignKey : false, onDelete = obj[key].onDelete != null ? obj[key].onDelete : false, onUpdate = obj[key].onUpdate != null ? obj[key].onUpdate : false;
                 //console.log('type', type, 'keyType', keyType);
                 switch (true) {
                     case type == Number && (keyType === 'primary'):
@@ -81,8 +70,7 @@ class PSQLWrapper {
             }
         }
         ;
-        let result = arr.join(',');
-        return result;
+        return arr.join(',');
     }
     createTable(schema, callback) {
         let checkIfExist = `select count(*) from pg_class where relname='${this.table}' and relkind='r'`;
@@ -91,10 +79,8 @@ class PSQLWrapper {
                 return { error: `there were errors creating table: ${this.table}` };
             }
             else {
-                //console.log('resp', resp);
-                //return res.json(resp.rows);
-                let exist = resp.rows[0].count;
-                if (exist == 1) {
+                let count = resp.rows[0].count;
+                if (count == 1) {
                     console.log(`${this.table} exists...`);
                     callback({ errorCode: 500, errorMessage: `${this.table} already exists!` });
                 }
@@ -103,7 +89,6 @@ class PSQLWrapper {
                     let createQuery = `create table "${this.table}"(${this.prepareCreate(schema)})`;
                     //console.log('createQuery', createQuery);
                     this.query(createQuery, (resp) => {
-                        console.log('resp', resp.name);
                         if (resp && resp.name == 'error') {
                             callback({ errorCode: 500, errorMessage: `${this.table} could not be created! Please check the schema specs.` });
                         }
@@ -123,7 +108,6 @@ class PSQLWrapper {
                     return res.status(500).json({ statusCode: 500, errorMessage: err });
                 }
                 else {
-                    console.log('from getAll resp', resp);
                     //return res.json(resp.rows);
                     callback(resp.rows);
                 }
@@ -133,32 +117,22 @@ class PSQLWrapper {
     findById(req, res, next, callback) {
         this.exec(req, res, next, (client, done) => {
             client.query(`SELECT * FROM "${this.table}" WHERE id=${req.params.id};`, (err, resp) => {
-                //callback(query);
                 done(err);
                 if (err) {
                     return res.status(500).json({ statusCode: 500, errorMessage: err });
                 }
                 else {
-                    // console.log('from findById resp', resp);
-                    // req[this.table] = resp.rows[0]; // findByIdIntereptor
                     callback(resp.rows[0]);
                 }
             });
         });
     }
     insert(req, res, next, callback) {
-        // console.log('from postgres.wrapper insert function req.body: ', req.body);
         const payload = req.body;
-        console.log('payload', payload);
-        let attrs = '';
-        let values = '';
-        let i = 0;
-        let fields = Object.keys(payload);
+        let attrs = '', values = '', i = 0, fields = Object.keys(payload);
         for (let key in payload) {
-            //console.log('key', key, fields.length - 1, 'i', i);
             attrs += `"${key}", `;
             values += `${this.convert(payload[key])}, `;
-            //  console.log('tyoeof value = ', typeof payload[key]);
             i++;
         }
         //attrs = attrs.slice(0, attrs.length - 2);
@@ -166,19 +140,21 @@ class PSQLWrapper {
         attrs += `"createdAt", "updatedAt"`;
         values += `'${this.convertToUTCDate(new Date().toISOString())}',
                     '${this.convertToUTCDate(new Date().toISOString())}'`; // add createdAt
-        console.log('attr: ', attrs);
-        console.log('values ', values);
+        //console.log('attr: ', attrs);
+        //console.log('values ', values);
+        let query = `INSERT into "${this.table}" (${attrs}) VALUES(${values}) RETURNING id;`;
+        console.log('query', query);
         this.exec(req, res, next, (client, done) => {
-            client.query(`INSERT into "${this.table}" (${attrs}) VALUES(${values}) RETURNING id;`, (err, resp) => {
+            client.query(query, (err, resp) => {
                 done(err);
                 if (err) {
-                    console.log('err', err);
+                    //console.log('err', err);
                     return res.status(500).json({ statusCode: 500, errorMessage: err });
                 }
                 else {
                     client.query(`SELECT * FROM "${this.table}" where id=${resp.rows[0].id}`, (err, resp) => {
                         done(err);
-                        console.log('resp', resp);
+                        //console.log('resp', resp);
                         callback(resp.rows[0]);
                         //return res.json(resp.rows[0]);
                     });
@@ -199,7 +175,7 @@ class PSQLWrapper {
                     return res.status(500).json({ statusCode: 500, errorMessage: err });
                 }
                 else {
-                    console.log('resp from update', resp);
+                    //console.log('resp from update', resp);
                     this.findById(req, res, next, (data) => {
                         // return res.json(data);
                         callback(data);
@@ -225,12 +201,8 @@ class PSQLWrapper {
         }
     }
     get(req, res, next, callback) {
-        let leftAlias = `_${this.table.toLowerCase()}`;
-        let query = `SELECT `;
-        let select = req.body.get != null ? this.prepareSelect(leftAlias, req.body.get) : false;
-        let join;
-        let joinOption = '';
-        let arr = {
+        let leftAlias = `_${this.table.toLowerCase()}`, query = `SELECT `, select = req.body.get != null ? this.prepareSelect(leftAlias, req.body.get) : false, join;
+        let joinOption = '', arr = {
             item: [], option: []
         };
         switch (true) {
@@ -259,35 +231,21 @@ class PSQLWrapper {
                 join = false;
                 break;
         }
-        let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false;
-        let group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select, join) : false;
-        let sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false;
-        let limit = req.body.limit != null ? req.body.limit : false;
+        let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false, group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select, join) : false, sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false, limit = req.body.limit != null ? req.body.limit : false;
         delete req.body.where;
-        console.log('typeof', typeof join);
-        console.log('JOINNNNNNNN NNN------>', joinOption);
+        // console.log('typeof', typeof join);
         if (select[0] == "*") {
             query += `* ${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
         else {
             query += select + `${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
-        if (join) {
-            query += ` ${joinOption} ${join.query}`;
-        }
-        if (where) {
-            query += ` WHERE ${where}`;
-        }
-        if (group) {
-            query += ` GROUP BY ${group}`;
-        }
-        if (sort) {
-            query += ` ORDER BY ${sort}`;
-        }
-        if (limit) {
-            query += ` LIMIT ${limit}`;
-        }
-        console.log('query', query);
+        join ? query += ` ${joinOption} ${join.query}` : false;
+        where ? query += ` WHERE ${where}` : false;
+        group ? query += ` GROUP BY ${group}` : false;
+        sort ? query += ` ORDER BY ${sort}` : false;
+        limit ? query += ` LIMIT ${limit}` : false;
+        //console.log('query', query);
         this.exec(req, res, next, (client, done) => {
             client.query(query, (err, resp) => {
                 done(err);
@@ -301,28 +259,32 @@ class PSQLWrapper {
         });
     }
     updateSet(req, res, next, callback) {
-        let leftAlias = `_${this.table.toLowerCase()}`;
-        let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false;
-        delete req.body.where;
         const bundle = req.body;
-        let keyValues = this.prepareObject(bundle);
-        let query = `UPDATE "${this.table}" as ${leftAlias} SET ${keyValues} WHERE ${where} RETURNING id;`;
+        let leftAlias = `_${this.table.toLowerCase()}`, where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false, keyValues = this.prepareObject(bundle), query = `UPDATE "${this.table}" as ${leftAlias} SET ${keyValues} WHERE ${where} RETURNING id;`;
+        delete req.body.where;
         console.log('query', query);
         this.exec(req, res, next, (client, done) => {
             client.query(query, (err, resp) => {
                 done(err);
+                console.log('here.........');
                 if (err) {
                     return res.status(500).json({ statusCode: 500, errorMessage: err });
                 }
                 else {
-                    //let affected = resp.rows;
                     let affectedRows = resp.rows.map((row) => {
                         return row.id;
                     });
-                    this.query(`SELECT * FROM "${this.table}" WHERE id in (${affectedRows})`, (data) => {
-                        console.log('data from updateSet..');
-                        callback(data);
-                    });
+                    console.log('affectedRows', affectedRows);
+                    // if more than one record is affected, find and return all the records
+                    if (affectedRows.length > 0) {
+                        this.query(`SELECT * FROM "${this.table}" WHERE id in (${affectedRows})`, (data) => {
+                            console.log(data);
+                            callback(data.rows);
+                        });
+                    }
+                    else {
+                        callback({ result: `No records affected!` }); // empty array
+                    }
                 }
             });
         });
@@ -341,25 +303,30 @@ class PSQLWrapper {
         });
     }
     convert(value) {
-        let isArray = value.constructor === Array;
-        if (isArray) {
-            return `'${value.join()}'`; // turn array of string into a single comma separated string.
+        if (value != null) {
+            let isArray = value.constructor === Array;
+            if (isArray) {
+                return `'${value.join()}'`; // turn array of string into a single comma separated string.
+            }
+            else {
+                switch (typeof value) {
+                    case 'number':
+                        return parseInt(value);
+                    case 'string':
+                        return `'${value.trim()}'`;
+                    case 'object':
+                        return value;
+                    case 'boolean':
+                        return value;
+                    case null:
+                        return null;
+                    default:
+                        return value;
+                }
+            }
         }
         else {
-            switch (typeof value) {
-                case 'number':
-                    return parseInt(value);
-                case 'string':
-                    return `'${value.trim()}'`;
-                case 'object':
-                    return value;
-                case 'boolean':
-                    return value;
-                case null:
-                    return null;
-                default:
-                    return value;
-            }
+            return value;
         }
     }
     // split object into key vaule string
@@ -367,14 +334,12 @@ class PSQLWrapper {
         const obj = props;
         let arr = [];
         for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
+            console.log('hey', key);
+            if (obj.hasOwnProperty(key) && key != 'where') {
                 arr.push(`"${key}"=${this.convert(obj[key])}`);
             }
         }
-        ;
-        let result = arr.join(',');
-        // console.log(result);
-        return result;
+        return arr.join(',');
     }
     prepareSelect(leftAlias, array) {
         let arr = [];
@@ -389,9 +354,7 @@ class PSQLWrapper {
             }
             ;
         }
-        let result = arr.join(', ');
-        //  console.log(result);
-        return result;
+        return arr.join(', ');
     }
     prepareWhere(leftAlias, props) {
         const obj = props;
@@ -402,16 +365,11 @@ class PSQLWrapper {
             }
         }
         ;
-        let result = arr.join(' AND ');
-        // console.log(result);
-        return result;
+        return arr.join(' AND ');
     }
     prepareGroup(leftAlias, props, select, join) {
         const obj = props;
-        let arr = [];
-        console.log('select', select, 'join', join['include']);
-        let selected = select.split(', ');
-        console.log('selected', selected);
+        let arr = [], selected = select.split(', ');
         for (let i in obj) {
             if (obj.hasOwnProperty(i)) {
                 arr.push(`"${leftAlias}"."${obj[i]}"`);
@@ -421,10 +379,7 @@ class PSQLWrapper {
         arr.filter((item) => {
             return selected.indexOf(item);
         });
-        console.log('arr', arr);
-        let result = arr.join(', ');
-        console.log(result);
-        return result;
+        return arr.join(', ');
     }
     prepareSort(leftAlias, props) {
         const obj = props;
@@ -435,12 +390,9 @@ class PSQLWrapper {
             }
         }
         ;
-        let result = arr.join(', ');
-        //  console.log(result);
-        return result;
+        return arr.join(', ');
     }
     prepareJoins(leftAlias, joins, arr, inc) {
-        console.log('from prepareJoins', joins);
         joins.forEach((props) => {
             this.prepareJoin(leftAlias, props, arr, inc);
         });
@@ -459,7 +411,7 @@ class PSQLWrapper {
     prepareJoin(leftAlias, props, arr, inc) {
         const obj = props;
         // let arr: Array<any> = [];
-        console.log('obj', obj);
+        //console.log('obj', obj);
         let table = Object.keys(obj)[0];
         let alias = `_${table.toLowerCase()}`;
         arr['item'].push(`"${table}" as "${alias}" ON ("${alias}"."${obj[table]}"="${leftAlias}"."${obj['on']}")`);

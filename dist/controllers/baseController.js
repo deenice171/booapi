@@ -133,8 +133,8 @@ class BaseController {
                 res.status(200).send({ message: 'Comming soon.' });
             }
             else if (this.options.dbType == 'postgres') {
-                this.psql.updateSet(req, res, next, (data) => {
-                    res.status(200).send({ message: 'update success', data: data.rows });
+                this.psql.updateSet(req, res, next, (resp) => {
+                    res.status(200).send({ message: 'update success', data: resp });
                 });
             }
         };

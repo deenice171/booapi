@@ -1,6 +1,5 @@
 "use strict";
 const express_1 = require('express');
-const Heroes = require('../data');
 class BaseRouter {
     constructor(controller) {
         this.controller = controller;

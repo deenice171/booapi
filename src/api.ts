@@ -6,16 +6,13 @@ import * as Models from './models/index';
 
 // cors
 const cors = require('cors');
-
 // mongoose
 const mongoose = require('mongoose');
-
 // api authentication
 const passport = require('passport');
 const Strategy = require('passport-local');
 const expressJWT = require('express-jwt');
 const bcrypt = require('bcrypt');
-
 // environment variable
 const envFile = require('../.env');
 const dotEnv = require('dotenv').load(envFile);
@@ -32,14 +29,12 @@ interface IOption {
 
 export class API {
     static db: any;
-    constructor(
-        private app: express.Express,
-        private port: number,
+    constructor(private app: express.Express, private port: number,
         private options: IOption) {
         this.initialize(app, options);
     }
 
-    configureDatabase(options: IOption) {
+    private configureDatabase(options: IOption) {
         switch (options.dbType) {
             case 'mongo':
                 mongoose.connect(this.options.connectionString);
@@ -79,7 +74,6 @@ export class API {
                 console.log('database default to postgres');
                 break;
         }
-        // console.log('todo configuring databaser...... db: ', db);
     }
 
     private configureMiddleware(app: express.Express): void {
@@ -89,16 +83,12 @@ export class API {
     }
 
     private configureRoutes(app: express.Express): void {
-        console.log('Models', Models);
         Object.keys(Models).forEach((key: any, index: number) => {
-            console.log('foreach model name', key);
-            // console.log('Models[key] = model ', Models[key]);
             app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options, key).model.router.make());
         });
     }
 
-    configureJWT(app: express.Express) {
-        console.log('process.env.JWT_SECRET', process.env.JWT_SECRET);
+    private configureJWT(app: express.Express) {
         app.use('/', expressJWT({
             secret: process.env.JWT_SECRET,
             credentialsRequired: true,
@@ -115,55 +105,8 @@ export class API {
         }));
     }
 
-    configurePassport(app: express.Express) {
-        console.log('this.options.dbType', this.options.dbType);
-        app.use(passport.initialize());
-        passport.use('local', new Strategy({
-            usernameField: 'email',
-            passwordField: 'password'
-        }, (email: string, password: string, done: any) => {
-            if (this.options.dbType == 'mongo') {
-                let user = mongoose.model('User');
-                console.log('user---------->', user);
-                user.findOne({ email })
-                    .populate([{ path: "role", model: "Role" }, { path: "provider", model: "Provider" }])
-                    .then((user: any) => {
-                        if (!user) {
-                            return done(null, false, { message: 'Incorrect username.' });
-                        } else {
-                            bcrypt.compare(password, user.password, (err: any, res: any) => {
-                                if (!res) {
-                                    return done(null, false, { message: 'Incorrect password' })
-                                }
-                                return done(null, user);
-                            })
-                        }
-                    })
-            } else if (this.options.dbType == 'postgres') {
-                console.log('here...');
-                API.db.query(`select * from USER where email=${email}`, null, (err: any, user: any) => {
-                    if (err) {
-                        console.log('error', err);
-                        return err;
-                    } else {
-                        console.log('from query user', user);
-                        bcrypt.compare(password, user[0].password, (err: any, res: any) => {
-                            if (!res) {
-                                return done(null, false, { message: 'Incorrect password' })
-                            } else {
-                                return done(null, user);
-                            }
-                        })
-                    }
-                });
-            }
-
-        }));
-    }
-
-    configureCors(app: express.Express) {
+    private configureCors(app: express.Express) {
         app.options('*', cors());
-        // Allow requests from any localhost -- on any port
         const corsHostnameWhitelist = [/http:\/\/localhost(?::\d{1,5})?$/];
         app.use(cors({
             origin: corsHostnameWhitelist
@@ -173,8 +116,6 @@ export class API {
     private initialize(app: express.Express, options: IOption) {
         this.configureDatabase(options);
         this.configureMiddleware(app);
-
-        //this.configurePassport(app);
         this.configureJWT(app);
         this.configureRoutes(app);
         this.configureCors(app);

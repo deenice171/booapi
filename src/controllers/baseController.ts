@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Book } from '../models/bookModel'; // change this to BaseModel
 import { BaseModel } from '../models/baseModel';
 
 import { PSQLWrapper } from '../wrapper/postgres.wrapper';
@@ -142,8 +141,8 @@ export class BaseController {
         if (this.options.dbType == 'mongo') {
             res.status(200).send({ message: 'Comming soon.' });
         } else if (this.options.dbType == 'postgres') {
-            this.psql.updateSet(req, res, next, (data: any) => {
-                res.status(200).send({ message: 'update success', data: data.rows });
+            this.psql.updateSet(req, res, next, (resp: any) => {
+                res.status(200).send({ message: 'update success', data: resp });
             });
         }
     }

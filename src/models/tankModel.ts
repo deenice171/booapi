@@ -7,7 +7,7 @@ export class Tank extends BaseModel {
 
     model: any;
 
-    constructor(public options: any, public name:string) {
+    constructor(public options: any, public name: string) {
         // call the super class and create the model
         super(options, name, { // must use mongoose.Schema syntax
             id: { type: Number, key: 'primary' },
@@ -30,6 +30,7 @@ export class Tank extends BaseModel {
             updatedAt: { type: Date, default: Date.now() },
             deletedAt: { type: Date, default: Date.now() }
         });
+
         // create a controller
         this.model.controller = new BaseController(this.options, this.name, this.model);
         // create a router
@@ -37,6 +38,7 @@ export class Tank extends BaseModel {
         // initialize custom endpoints
         this.addCustomEndpoints();
     }
+
     // init all custom endpoints
     addCustomEndpoints() {
         console.log('create custom endpoints here!');

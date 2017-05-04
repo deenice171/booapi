@@ -1,7 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-const Heroes = require('../data');
 import { BaseController } from '../controllers/baseController';
-import { Book } from '../models/bookModel';
 
 export class BaseRouter {
 
