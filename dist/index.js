@@ -2,24 +2,13 @@
 const api_1 = require('./api');
 const express = require('express');
 const port = process.env.PORT || 3000;
-/*
-const options = {
-  dbType: 'mongo',
-  dbName: 'bookAPI',
-  user: '',
-  password: '',
-  host: 'localhost',
-  port: 27017,
-  connectionString:process.env.DB_CONN
-};
-*/
 const options = {
     dbType: 'postgres',
-    dbName: process.env.dbName,
-    user: process.env.dbUser,
-    password: process.env.dbPassword,
-    host: 'localhost',
-    port: 5432,
+    dbName: process.env.DB_NAME,
+    dbUser: process.env.DB_USER,
+    dbPassword: process.env.DB_PASS,
+    dbHost: process.env.DB_HOST,
+    dbPort: process.env.DB_PORT,
     connectionString: process.env.DB_CONN
 };
 const api = new api_1.API(express(), port, options).spawn();
