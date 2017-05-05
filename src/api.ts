@@ -20,10 +20,10 @@ const dotEnv = require('dotenv').load(envFile);
 interface IOption {
     dbType: string,
     dbName: string,
-    user: string,
-    password: string,
-    host: string,
-    port: number,
+    dbUser: string,
+    dbPassword: string,
+    dbHost: string,
+    dbPort: number,
     connectionString: string
 }
 
@@ -31,10 +31,10 @@ export class API {
     static db: any;
     constructor(private app: express.Express, private port: number,
         private options: IOption) {
-        this.initialize(app, options);
+        this.configureDatabase(app, options);
     }
 
-    private configureDatabase(options: IOption) {
+    private configureDatabase(app: express.Express, options: IOption) {
         switch (options.dbType) {
             case 'mongo':
                 mongoose.connect(this.options.connectionString);
@@ -43,22 +43,59 @@ export class API {
             case 'postgres':
                 const pg = require('pg');
                 let config = {
-                    user: options.user,
+                    user: options.dbUser,
                     database: options.dbName,
-                    password: options.password,
-                    host: options.host,
-                    port: options.port,
+                    password: options.dbPassword,
+                    host: options.dbHost,
+                    port: options.dbPort,
                     max: 10, // max number of clients in the pool
                     idleTimeoutMillis: 30000,
                 };
+
                 const pool = new pg.Pool(config);
+
                 pool.on('error', function (err: any, client: any) {
                     console.error('idle client error', err.message, err.stack);
                 });
 
+                // check if database exists, if not create it 
+                let checkConn = `postgres://${this.options.dbUser}:${this.options.dbPassword}@${this.options.dbHost}:${this.options.dbPort}/postgres`; // the default database
+                let query = `select count(*) from pg_catalog.pg_database where lower(datname) = lower('${options.dbName}')`;
+
+                pg.connect(checkConn, (err: any, client: any, done: any) => { // connect to postgres db
+                    if (err) {
+                        console.log('Error while connecting: ' + err);
+                    }
+                    // check if database exist
+                    client.query(query, (err: any, resp: any) => {
+                        done(err);
+                        if (err) {
+                            client.end(); // close the connection
+                        } else {
+                            if (resp.rows[0].count == 0) {
+                                //database does not exist, create one 
+                                let create = `CREATE DATABASE "${this.options.dbName}" OWNER ${this.options.dbUser}`;
+                                client.query(create, (err: any, resp: any) => {
+                                    done(err);
+                                    if (err) {
+                                        console.log('ignoring the error', err); // ignore if the db is there
+                                    } else {
+                                        this.initialize(app, options);
+                                    }
+                                    client.end(); // close the connection
+                                });
+                            } else {
+                                // the database already exist, initialize
+                                client.end();
+                                this.initialize(app, options);
+                            }
+                        }
+                    });
+                });
+
                 API.db = {
                     query: (text: any, values: any, callback: any) => {
-                        console.log('from api.ts query: ', text, values);
+                        console.log('from api.ts query: ', text, ' with values: ', values);
                         return pool.query(text, values, callback);
                     },
                     connect: (callback: any) => {
@@ -114,7 +151,7 @@ export class API {
     }
 
     private initialize(app: express.Express, options: IOption) {
-        this.configureDatabase(options);
+        // this.configureDatabase(options);
         this.configureMiddleware(app);
         this.configureJWT(app);
         this.configureRoutes(app);

@@ -10,7 +10,6 @@ class BaseController {
         this.name = name;
         this.model = model;
         this.findByIdInterceptor = (req, res, next) => {
-            console.log('from intereptor...dbType: ', this.options.dbType);
             if (this.options.dbType == 'mongo') {
                 this.model.findById(req.params.id, (err, resp) => {
                     if (err) {
@@ -26,7 +25,6 @@ class BaseController {
                 });
             }
             else if (this.options.dbType == 'postgres') {
-                console.log('from baseController initializing postgres...');
                 this.psql.findById(req, res, next, (data) => {
                     req[this.name] = data;
                     next();
@@ -55,7 +53,6 @@ class BaseController {
                 res.json(req[this.name]);
             }
             else if (this.options.dbType == 'postgres') {
-                console.log('from base controller findById...l req.this.name', req[this.name]);
                 res.json(req[this.name]); // the same because of findByIdInterceptor
             }
         };
@@ -63,7 +60,6 @@ class BaseController {
             if (this.options.dbType == 'mongo') {
                 this.model.create(req.body, (err, resp) => {
                     if (err) {
-                        console.log('err', err);
                         res.status(500).send(err);
                     }
                     else {
@@ -72,7 +68,6 @@ class BaseController {
                 });
             }
             else if (this.options.dbType == 'postgres') {
-                console.log('from baseController POST postgres...');
                 this.psql.insert(req, res, next, (resp) => {
                     res.status(201).send(resp);
                 });
@@ -80,9 +75,7 @@ class BaseController {
         };
         this.update = (req, res, next) => {
             let updatedFields = Object.assign(req[this.name], req.body);
-            console.log(`new ${this.name}`, updatedFields);
             if (this.options.dbType == 'mongo') {
-                console.log('from baseController update mongo....');
                 this.model.update(updatedFields, (err, resp) => {
                     if (err) {
                         res.status(500).send(err);
@@ -93,7 +86,6 @@ class BaseController {
                 });
             }
             else if (this.options.dbType == 'postgres') {
-                console.log('from baseController udpate method...l');
                 this.psql.update(req, res, next, (data) => {
                     res.json(data);
                 });
@@ -198,8 +190,6 @@ class BaseController {
         this.setError = (error) => {
             this.error.push(error);
         };
-        //console.log('from baseController book: ', this.model);
-        //console.log('this.name', this.name);
         this.psql = new postgres_wrapper_1.PSQLWrapper(this.options, this.name);
     }
 }

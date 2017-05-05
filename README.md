@@ -43,7 +43,7 @@ The API uses express-jwt, jwt and bcrypt to lock down all the endpoints. When a 
 ## Setup
 To setup the api, using mongo, specify the mongo connection string and options object. See Options below
 
-For Postgres, first create an empty database, then build your models. This will automatically create the tables.
+For Postgres, configure database settings in .env, then build your models. This will automatically the database if it does not exist and create the tables matching the model specifications.
 
 OR connect to an existing database with the postgres connection string and options object. See below.
 
@@ -163,10 +163,10 @@ Option Object:
 let options = { 
   dbType: 'mongo', 
   dbName: 'bookAPI', 
-  user: '',
-  password: '',
-  host: 'localhost',
-  port: 27017,
+  dbUser: '',
+  dbPassword: '',
+  dbHost: 'localhost',
+  dbPort: 27017,
   connectionString:connectionString 
 };
 ```
@@ -182,10 +182,10 @@ Option Object:
 let options = {
   dbType: 'postgres',
   dbName: process.env.dbName,
-  user: process.env.dbUser,
-  password: process.env.dbPassword,
-  host: 'localhost',
-  port: 5432,
+  dbUser: process.env.dbUser,
+  dbPassword: process.env.dbPassword,
+  dbHost: process.env.dbHost,
+  dbPort: process.env.dbPort,
   connectionString: connectionString
 };
 ```

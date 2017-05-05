@@ -19,9 +19,9 @@ class API {
         this.app = app;
         this.port = port;
         this.options = options;
-        this.initialize(app, options);
+        this.configureDatabase(app, options);
     }
-    configureDatabase(options) {
+    configureDatabase(app, options) {
         switch (options.dbType) {
             case 'mongo':
                 mongoose.connect(this.options.connectionString);
@@ -30,11 +30,11 @@ class API {
             case 'postgres':
                 const pg = require('pg');
                 let config = {
-                    user: options.user,
+                    user: options.dbUser,
                     database: options.dbName,
-                    password: options.password,
-                    host: options.host,
-                    port: options.port,
+                    password: options.dbPassword,
+                    host: options.dbHost,
+                    port: options.dbPort,
                     max: 10,
                     idleTimeoutMillis: 30000,
                 };
@@ -42,9 +42,45 @@ class API {
                 pool.on('error', function (err, client) {
                     console.error('idle client error', err.message, err.stack);
                 });
+                // check if database exists, if not create it 
+                let checkConn = `postgres://${this.options.dbUser}:${this.options.dbPassword}@${this.options.dbHost}:${this.options.dbPort}/postgres`; // the default database
+                let query = `select count(*) from pg_catalog.pg_database where lower(datname) = lower('${options.dbName}')`;
+                pg.connect(checkConn, (err, client, done) => {
+                    if (err) {
+                        console.log('Error while connecting: ' + err);
+                    }
+                    // check if database exist
+                    client.query(query, (err, resp) => {
+                        done(err);
+                        if (err) {
+                            client.end(); // close the connection
+                        }
+                        else {
+                            if (resp.rows[0].count == 0) {
+                                //database does not exist, create one 
+                                let create = `CREATE DATABASE "${this.options.dbName}" OWNER ${this.options.dbUser}`;
+                                client.query(create, (err, resp) => {
+                                    done(err);
+                                    if (err) {
+                                        console.log('ignoring the error', err); // ignore if the db is there
+                                    }
+                                    else {
+                                        this.initialize(app, options);
+                                    }
+                                    client.end(); // close the connection
+                                });
+                            }
+                            else {
+                                // the database already exist, initialize
+                                client.end();
+                                this.initialize(app, options);
+                            }
+                        }
+                    });
+                });
                 API.db = {
                     query: (text, values, callback) => {
-                        console.log('from api.ts query: ', text, values);
+                        console.log('from api.ts query: ', text, ' with values: ', values);
                         return pool.query(text, values, callback);
                     },
                     connect: (callback) => {
@@ -96,7 +132,7 @@ class API {
         }));
     }
     initialize(app, options) {
-        this.configureDatabase(options);
+        // this.configureDatabase(options);
         this.configureMiddleware(app);
         this.configureJWT(app);
         this.configureRoutes(app);
