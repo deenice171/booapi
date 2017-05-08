@@ -13,15 +13,16 @@ class Book extends baseModel_1.BaseModel {
             id: { type: Number, key: 'primary' },
             title: { type: String, maxlength: 24 },
             author: { type: String, maxlength: 24 },
-            genre: { type: String, maxlength: 24 },
+            genre: { type: String, maxlength: 24, unique: true },
             read: { type: Boolean, default: true },
-            //noteId: { 
-            //type: Number, 
-            //key: 'foreign', 
-            //references: { table: 'Note', foreignKey: 'id' },
-            //onDelete:'cascade',
-            //onUpdate:'cascade' 
-            // },
+            userId: {
+                type: Number,
+                key: 'foreign',
+                references: { table: 'User', foreignKey: 'id' },
+                onDelete: 'cascade',
+                onUpdate: 'restrict',
+                unique: true
+            },
             createdAt: { type: Date },
             updatedAt: { type: Date },
             deletedAt: { type: Date }
