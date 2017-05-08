@@ -78,17 +78,17 @@ export class PSQLWrapper {
                     case type == Boolean:
                         str = `"${key}" boolean default ${defaultVal}`;
                         unique ? str += ` unique`: false;
-                        arr.push(); //default to true
+                        arr.push(str); //default to true
                         break;
                     case type == Date:
                         str = `"${key}" timestamp`;
                         unique ? str += ` unique`: false;
-                        arr.push(); //default to true
+                        arr.push(str); //default to true
                         break;
                     default:
                         str = `"${key}" varchar(${maxLength})`;
                         unique ? str += ` unique`: false;
-                        arr.push();
+                        arr.push(str);
                         break;
                 }
             }
