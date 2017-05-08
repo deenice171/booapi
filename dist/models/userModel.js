@@ -14,7 +14,7 @@ class User extends baseModel_1.BaseModel {
         // call the super class and create the model
         super(options, name, {
             id: { type: Number, key: 'primary' },
-            email: { type: String },
+            email: { type: String, unique: true },
             username: { type: String },
             password: { type: String, maxlength: 200 },
             role: { type: Array },

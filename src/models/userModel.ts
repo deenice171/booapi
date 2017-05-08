@@ -19,7 +19,7 @@ export class User extends BaseModel {
         // call the super class and create the model
         super(options, name, { // must use mongoose.Schema syntax
             id: { type: Number, key: 'primary' },
-            email: { type: String },
+            email: { type: String, unique:true },
             username: { type: String },
             password: { type: String, maxlength: 200 },
             role: { type: Array },

@@ -181,11 +181,11 @@ Option Object:
 ```
 let options = {
   dbType: 'postgres',
-  dbName: process.env.dbName,
-  dbUser: process.env.dbUser,
-  dbPassword: process.env.dbPassword,
-  dbHost: process.env.dbHost,
-  dbPort: process.env.dbPort,
+  dbName: process.env.DB_NAME,
+  dbUser: process.env.DB_USER,
+  dbPassword: process.env.DB_PASS,
+  dbHost: process.env.DB_HOST,
+  dbPort: process.env.DB_PORT,
   connectionString: connectionString
 };
 ```

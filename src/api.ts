@@ -138,7 +138,12 @@ export class API {
                 return null;
             }
         }).unless({
-            path: [/\/api\/v1\/user\/login(?!\/renew)/, /\/api\/v1\/user\/reset-password/, /\/api\/v1\/user\/forgot-password/]
+            path: [
+                /\/api\/v1\/user\/login(?!\/renew)/,
+                /\/api\/v1\/user\/reset-password/,
+                /\/api\/v1\/user\/forgot-password/,
+                /\/api\/v1\/user\/create-secure/
+            ]
         }));
     }
 
@@ -154,8 +159,8 @@ export class API {
         // this.configureDatabase(options);
         this.configureMiddleware(app);
         this.configureJWT(app);
-        this.configureRoutes(app);
         this.configureCors(app);
+        this.configureRoutes(app);
     }
 
     public spawn() {

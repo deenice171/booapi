@@ -38,33 +38,45 @@ class PSQLWrapper {
         for (let key in obj) {
             if (obj.hasOwnProperty(key)) {
                 //console.log('objkehy', obj[key]);
-                let type = obj[key].type != null ? obj[key].type : false, keyType = obj[key].key != null ? obj[key].key : false, maxLength = obj[key].maxlength != null ? obj[key].maxlength : 100, // default to 50
+                let type = obj[key].type != null ? obj[key].type : false, unique = obj[key].unique != null ? obj[key].unique : false, keyType = obj[key].key != null ? obj[key].key : false, maxLength = obj[key].maxlength != null ? obj[key].maxlength : 100, // default to 50
                 defaultVal = obj[key].default != null ? obj[key].default : false, foreignTable = obj[key].references != null ? obj[key].references.table : false, foreignKey = obj[key].references != null ? obj[key].references.foreignKey : false, onDelete = obj[key].onDelete != null ? obj[key].onDelete : false, onUpdate = obj[key].onUpdate != null ? obj[key].onUpdate : false;
                 //console.log('type', type, 'keyType', keyType);
+                let str = ``;
                 switch (true) {
                     case type == Number && (keyType === 'primary'):
                         arr.push(`"${key}" serial PRIMARY KEY`);
                         break;
                     case type == Number && (keyType === 'foreign'):
-                        let foreign = `"${key}" integer references "${foreignTable}"("${foreignKey}")`;
-                        onDelete ? foreign += ` on delete ${onDelete}` : false;
-                        onUpdate ? foreign += ` on update ${onUpdate}` : false;
-                        arr.push(foreign);
+                        str = `"${key}" integer references "${foreignTable}"("${foreignKey}")`;
+                        onDelete ? str += ` on delete ${onDelete}` : false;
+                        onUpdate ? str += ` on update ${onUpdate}` : false;
+                        unique ? str += ` unique` : false;
+                        arr.push(str);
                         break;
                     case type == Number && (keyType == false):
-                        arr.push(`"${key}" integer`);
+                        str = `"${key}" integer`;
+                        unique ? str += ` unique` : false;
+                        arr.push(str);
                         break;
                     case type == String:
-                        arr.push(`"${key}" varchar(${maxLength})`);
+                        str = `"${key}" varchar(${maxLength})`;
+                        unique ? str += ` unique` : false;
+                        arr.push(str);
                         break;
                     case type == Boolean:
-                        arr.push(`"${key}" boolean default ${defaultVal}`); //default to true
+                        str = `"${key}" boolean default ${defaultVal}`;
+                        unique ? str += ` unique` : false;
+                        arr.push(); //default to true
                         break;
                     case type == Date:
-                        arr.push(`"${key}" timestamp`); //default to true
+                        str = `"${key}" timestamp`;
+                        unique ? str += ` unique` : false;
+                        arr.push(); //default to true
                         break;
                     default:
-                        arr.push(`"${key}" varchar(${maxLength})`);
+                        str = `"${key}" varchar(${maxLength})`;
+                        unique ? str += ` unique` : false;
+                        arr.push();
                         break;
                 }
             }
