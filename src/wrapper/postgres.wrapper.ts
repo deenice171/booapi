@@ -62,32 +62,32 @@ export class PSQLWrapper {
                         str = `"${key}" integer references "${foreignTable}"("${foreignKey}")`;
                         onDelete ? str += ` on delete ${onDelete}` : false;
                         onUpdate ? str += ` on update ${onUpdate}` : false;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == Number && (keyType == false):
                         str = `"${key}" integer`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == String:
                         str = `"${key}" varchar(${maxLength})`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == Boolean:
                         str = `"${key}" boolean default ${defaultVal}`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str); //default to true
                         break;
                     case type == Date:
                         str = `"${key}" timestamp`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str); //default to true
                         break;
                     default:
                         str = `"${key}" varchar(${maxLength})`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                 }
@@ -257,6 +257,10 @@ export class PSQLWrapper {
                 joinOption = 'CROSS JOIN';
                 join = this.prepareJoins(leftAlias, req.body.cross_join, arr, []);
                 break;
+            case req.body.join != null:
+                joinOption = req.body.join[0].joinType;
+                join = this.prepareJoins(leftAlias, req.body.join, arr, []);
+                break;
             default:
                 joinOption = 'INNER JOIN';
                 join = false;
@@ -274,13 +278,13 @@ export class PSQLWrapper {
         } else {
             query += select + `${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
-        join ? query += ` ${joinOption} ${join.query}` : false;
+        join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
 
-        //console.log('query', query);
+        console.log('query', query);
         this.exec(req, res, next, (client: any, done: any) => {
             client.query(query, (err: any, resp: any) => {
                 done(err);
@@ -436,7 +440,7 @@ export class PSQLWrapper {
         joins.forEach((props) => {
             this.prepareJoin(leftAlias, props, arr, inc);
         });
-        let query = arr['item'].join(` LEFT OUTER JOIN `);
+        let query = arr['item'].join(` `);
         // let test = arr['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
         // return join + ` ${arr['option'][index]} `
@@ -454,24 +458,30 @@ export class PSQLWrapper {
         const obj = props;
         // let arr: Array<any> = [];
         console.log('obj', obj);
-        let table = Object.keys(obj)[0];
+        //let table = Object.keys(obj)[0];
+        let table = obj['table'];
+        let joinType = obj['joinType']
+        let foreignKey = obj['foreignKey'];
         let alias = `_${table.toLowerCase()}`;
         let as = obj['as'];
+        let on = obj['on'];
 
-        arr['item'].push(`"${table}" as "${alias}" ON ("${alias}"."${obj[table]}"="${leftAlias}"."${obj['on']}")`);
-        inc.push(`, json_agg("${alias}".*) AS "${as}"`);
+        arr['item'].push(`${joinType} "${table}" as "${alias}" ON ("${alias}"."${foreignKey}"="${leftAlias}"."${obj['on']}")`);
+        inc.push(`, json_agg(DISTINCT "${alias}".*) AS "${as}"`);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
-            if (obj.hasOwnProperty(key) && key == "inner_join") {
+            if (obj.hasOwnProperty(key) && key == "join") {
                 // console.log("from obj[key]", obj[key]);
-                arr['option'].push(this.getJoinType(key));
+                // arr['type'].push(this.getJoinType(key));
+                arr['joinType'].push(obj[key].joinType);
                 this.prepareJoin(alias, obj[key], arr, inc);
             } else {
 
             }
         };
-        // arr['option'] = 'LEFT OUTER JOIN';
+        //arr['joinType'] = joinType;
         // console.log('arr', arr);
+        console.log('arr.joinType', arr['joinType']);
         // let query = arr.join(' LEFT OUTER JOIN ');
         // let include = inc.join(' ');
         return {

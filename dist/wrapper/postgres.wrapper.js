@@ -238,6 +238,10 @@ class PSQLWrapper {
                 joinOption = 'CROSS JOIN';
                 join = this.prepareJoins(leftAlias, req.body.cross_join, arr, []);
                 break;
+            case req.body.join != null:
+                joinOption = req.body.join[0].joinType;
+                join = this.prepareJoins(leftAlias, req.body.join, arr, []);
+                break;
             default:
                 joinOption = 'INNER JOIN';
                 join = false;
@@ -252,12 +256,12 @@ class PSQLWrapper {
         else {
             query += select + `${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
-        join ? query += ` ${joinOption} ${join.query}` : false;
+        join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
-        //console.log('query', query);
+        console.log('query', query);
         this.exec(req, res, next, (client, done) => {
             client.query(query, (err, resp) => {
                 done(err);
@@ -408,7 +412,7 @@ class PSQLWrapper {
         joins.forEach((props) => {
             this.prepareJoin(leftAlias, props, arr, inc);
         });
-        let query = arr['item'].join(` LEFT OUTER JOIN `);
+        let query = arr['item'].join(` `);
         // let test = arr['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
         // return join + ` ${arr['option'][index]} `
@@ -424,24 +428,30 @@ class PSQLWrapper {
         const obj = props;
         // let arr: Array<any> = [];
         console.log('obj', obj);
-        let table = Object.keys(obj)[0];
+        //let table = Object.keys(obj)[0];
+        let table = obj['table'];
+        let joinType = obj['joinType'];
+        let foreignKey = obj['foreignKey'];
         let alias = `_${table.toLowerCase()}`;
         let as = obj['as'];
-        arr['item'].push(`"${table}" as "${alias}" ON ("${alias}"."${obj[table]}"="${leftAlias}"."${obj['on']}")`);
-        inc.push(`, json_agg("${alias}".*) AS "${as}"`);
+        let on = obj['on'];
+        arr['item'].push(`${joinType} "${table}" as "${alias}" ON ("${alias}"."${foreignKey}"="${leftAlias}"."${obj['on']}")`);
+        inc.push(`, json_agg(DISTINCT "${alias}".*) AS "${as}"`);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
-            if (obj.hasOwnProperty(key) && key == "inner_join") {
+            if (obj.hasOwnProperty(key) && key == "join") {
                 // console.log("from obj[key]", obj[key]);
-                arr['option'].push(this.getJoinType(key));
+                // arr['type'].push(this.getJoinType(key));
+                arr['joinType'].push(obj[key].joinType);
                 this.prepareJoin(alias, obj[key], arr, inc);
             }
             else {
             }
         }
         ;
-        // arr['option'] = 'LEFT OUTER JOIN';
+        //arr['joinType'] = joinType;
         // console.log('arr', arr);
+        console.log('arr.joinType', arr['joinType']);
         // let query = arr.join(' LEFT OUTER JOIN ');
         // let include = inc.join(' ');
         return {
