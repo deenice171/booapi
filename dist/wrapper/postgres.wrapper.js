@@ -66,17 +66,17 @@ class PSQLWrapper {
                     case type == Boolean:
                         str = `"${key}" boolean default ${defaultVal}`;
                         unique ? str += ` unique` : false;
-                        arr.push(); //default to true
+                        arr.push(str); //default to true
                         break;
                     case type == Date:
                         str = `"${key}" timestamp`;
                         unique ? str += ` unique` : false;
-                        arr.push(); //default to true
+                        arr.push(str); //default to true
                         break;
                     default:
                         str = `"${key}" varchar(${maxLength})`;
                         unique ? str += ` unique` : false;
-                        arr.push();
+                        arr.push(str);
                         break;
                 }
             }
@@ -149,7 +149,7 @@ class PSQLWrapper {
         }
         //attrs = attrs.slice(0, attrs.length - 2);
         //values = values.slice(0, values.length - 2);
-        attrs += `"createdAt", "updatedAt"`;
+        attrs += `"created_at", "updated_at"`;
         values += `'${this.convertToUTCDate(new Date().toISOString())}',
                     '${this.convertToUTCDate(new Date().toISOString())}'`; // add createdAt
         //console.log('attr: ', attrs);

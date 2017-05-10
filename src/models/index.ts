@@ -1,3 +1,3 @@
-export * from './bookModel';
-export * from './userModel';
-export * from './tankModel';
+export * from './book.model';
+export * from './user.model';
+export * from './tank.model';

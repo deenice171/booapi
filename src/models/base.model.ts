@@ -3,8 +3,8 @@
 */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { BaseController } from '../controllers/baseController';
-import { BaseRouter } from '../routes/baseRouter';
+import { BaseController } from '../controllers/base.controller';
+import { BaseRouter } from '../routes/base.router';
 
 const mongoose = require('mongoose');
 //const Schema = mongoose.schema;
