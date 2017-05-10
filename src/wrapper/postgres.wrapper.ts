@@ -453,12 +453,13 @@ export class PSQLWrapper {
     prepareJoin(leftAlias: string, props: Object, arr: Object, inc: Array<any>) {
         const obj = props;
         // let arr: Array<any> = [];
-        //console.log('obj', obj);
+        console.log('obj', obj);
         let table = Object.keys(obj)[0];
         let alias = `_${table.toLowerCase()}`;
+        let as = obj['as'];
 
         arr['item'].push(`"${table}" as "${alias}" ON ("${alias}"."${obj[table]}"="${leftAlias}"."${obj['on']}")`);
-        inc.push(`, json_agg("${alias}".*) AS "${table}"`);
+        inc.push(`, json_agg("${alias}".*) AS "${as}"`);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
             if (obj.hasOwnProperty(key) && key == "inner_join") {

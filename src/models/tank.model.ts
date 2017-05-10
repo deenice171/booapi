@@ -24,6 +24,13 @@ export class Tank extends BaseModel {
             //tankDeviceId: { type: Number, key: 'foreign', references: { table: "TankDevice", foreignKey: 'id' } },
             //productId: { type: Number, key: 'foreign', references: { table: "Product", foreignKey: 'id' } },
             //clientId: { type: Number, key: 'foreign', references: { table: "Client", foreignKey: 'id' } },
+            user_id: {
+                type: Number,
+                key: 'foreign',
+                references: { table: 'User', foreignKey: 'id' },
+                onDelete: 'cascade',
+                onUpdate: 'cascade'
+            },
             active: { type: Boolean, default: true },
             created_at: { type: Date, default: Date.now() },
             updated_at: { type: Date, default: Date.now() },
