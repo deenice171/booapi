@@ -214,33 +214,35 @@ class PSQLWrapper {
     }
     get(req, res, next, callback) {
         let leftAlias = `_${this.table.toLowerCase()}`, query = `SELECT `, select = req.body.get != null ? this.prepareSelect(leftAlias, req.body.get) : false, join;
-        let joinOption = '', arr = {
-            item: [], option: []
-        };
+        let joinOption = '', options = {
+            query: [],
+            joinType: [],
+            where: []
+        }, includes = [];
         switch (true) {
             case req.body.inner_join != null:
                 joinOption = 'INNER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.inner_join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.inner_join, options, includes);
                 break;
             case req.body.outer_join != null:
                 joinOption = 'OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.outer_join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.outer_join, options, includes);
                 break;
             case req.body.left_outer_join != null:
                 joinOption = 'LEFT OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.left_outer_join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.left_outer_join, options, includes);
                 break;
             case req.body.full_outer_join != null:
                 joinOption = 'FULL OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.full_outer_join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.full_outer_join, options, includes);
                 break;
             case req.body.cross_join != null:
                 joinOption = 'CROSS JOIN';
-                join = this.prepareJoins(leftAlias, req.body.cross_join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.cross_join, options, includes);
                 break;
             case req.body.join != null:
                 joinOption = req.body.join[0].joinType;
-                join = this.prepareJoins(leftAlias, req.body.join, arr, []);
+                join = this.prepareJoins(leftAlias, req.body.join, options, includes);
                 break;
             default:
                 joinOption = 'INNER JOIN';
@@ -258,6 +260,7 @@ class PSQLWrapper {
         }
         join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
+        join.where.length ? query += ` AND ${join.where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
@@ -408,23 +411,28 @@ class PSQLWrapper {
         ;
         return arr.join(', ');
     }
-    prepareJoins(leftAlias, joins, arr, inc) {
+    prepareJoins(leftAlias, joins, options, includes) {
         joins.forEach((props) => {
-            this.prepareJoin(leftAlias, props, arr, inc);
+            this.prepareJoin(leftAlias, props, options, includes);
         });
-        let query = arr['item'].join(` `);
-        // let test = arr['item'].map((join:any, index:number, array:Array<any>) => {
+        let query = options['query'].join(` `);
+        let where = ``;
+        //options['where'].length > 0 ? where += ` AND ` : false;
+        options['where'].length > 0 ? where += options['where'].join(` AND `) : false;
+        //let where = options['where'].join(` `);
+        // let test = options['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
-        // return join + ` ${arr['option'][index]} `
+        // return join + ` ${options['option'][index]} `
         //});
-        //console.log('test', test);
-        let include = inc.join(' ');
+        console.log('where', where);
+        let include = includes.join(' ');
         return {
             query: query,
-            include: include
+            include: include,
+            where: where
         };
     }
-    prepareJoin(leftAlias, props, arr, inc) {
+    prepareJoin(leftAlias, props, options, includes) {
         const obj = props;
         // let arr: Array<any> = [];
         console.log('obj', obj);
@@ -433,17 +441,20 @@ class PSQLWrapper {
         let joinType = obj['joinType'];
         let foreignKey = obj['foreignKey'];
         let alias = `_${table.toLowerCase()}`;
-        let as = obj['as'];
+        let asProp = obj['as'];
         let on = obj['on'];
-        arr['item'].push(`${joinType} "${table}" as "${alias}" ON ("${alias}"."${foreignKey}"="${leftAlias}"."${obj['on']}")`);
-        inc.push(`, json_agg(DISTINCT "${alias}".*) AS "${as}"`);
+        let where = '';
+        obj['where'] != null ? where = this.prepareWhere(alias, obj['where']) : false; // optional
+        options['query'].push(`${joinType} "${table}" as "${alias}" ON ("${alias}"."${foreignKey}"="${leftAlias}"."${obj['on']}")`);
+        obj['where'] != null ? options['where'].push(`${where}`) : false;
+        includes.push(`, json_agg(DISTINCT "${alias}".*) AS "${asProp}"`);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
             if (obj.hasOwnProperty(key) && key == "join") {
                 // console.log("from obj[key]", obj[key]);
                 // arr['type'].push(this.getJoinType(key));
-                arr['joinType'].push(obj[key].joinType);
-                this.prepareJoin(alias, obj[key], arr, inc);
+                options['joinType'].push(obj[key].joinType);
+                this.prepareJoin(alias, obj[key], options, includes);
             }
             else {
             }
@@ -451,12 +462,12 @@ class PSQLWrapper {
         ;
         //arr['joinType'] = joinType;
         // console.log('arr', arr);
-        console.log('arr.joinType', arr['joinType']);
+        console.log('arr.joinType', options['joinType']);
         // let query = arr.join(' LEFT OUTER JOIN ');
         // let include = inc.join(' ');
         return {
-            arr: arr,
-            inc: inc
+            options: options,
+            includes: includes
         };
     }
     convertToUTCDate(date) {
