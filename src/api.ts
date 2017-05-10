@@ -38,6 +38,9 @@ export class API {
         switch (options.dbType) {
             case 'mongo':
                 mongoose.connect(this.options.connectionString);
+                console.log('conn string', this.options.connectionString);
+                console.log(`database set to ${this.options.dbType}, and is connected to ${this.options.dbName}`);
+                this.initialize(app, options);
                 // set this.db = mongoose.connect
                 break;
             case 'postgres':
@@ -121,6 +124,7 @@ export class API {
 
     private configureRoutes(app: express.Express): void {
         Object.keys(Models).forEach((key: any, index: number) => {
+            console.log(Models);
             app.use(`/api/v1/${key.toLowerCase()}`, new Models[key](this.options, key).model.router.make());
         });
     }
