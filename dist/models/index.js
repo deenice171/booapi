@@ -4,4 +4,5 @@ function __export(m) {
 }
 __export(require('./book.model'));
 __export(require('./user.model'));
+__export(require('./book-user'));
 __export(require('./tank.model'));

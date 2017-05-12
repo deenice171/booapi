@@ -360,6 +360,25 @@ class PSQLWrapper {
         }
         return arr.join(',');
     }
+    prepareOnClause(array) {
+        //const arr = array;
+        console.log('array', array);
+        let arr = [];
+        for (let item in array) {
+            let obj = array[item];
+            console.log('obj------>', obj);
+            let table1 = Object.keys(obj)[0];
+            let table2 = Object.keys(obj)[1];
+            let table1Key = obj[table1];
+            let table2Key = obj[table2];
+            arr.push(`"_${table1.toLowerCase()}"."${table1Key}"="_${table2.toLowerCase()}"."${table2Key}"`);
+        }
+        //let onClause = ` AND ` + arr.join(' AND ');
+        //console.log('onCluase from lll', onClause);
+        // return onClause;
+        //arr = arr.join(' AND ');
+        return arr.join(' AND ');
+    }
     prepareSelect(leftAlias, array) {
         let arr = [];
         if (array[0] == "*") {
@@ -425,7 +444,7 @@ class PSQLWrapper {
         // return join + ` ${options['option'][index]} `
         //});
         console.log('where', where);
-        let include = includes.join(' ');
+        let include = includes.join('');
         return {
             query: query,
             include: include,
@@ -437,17 +456,41 @@ class PSQLWrapper {
         // let arr: Array<any> = [];
         console.log('obj', obj);
         //let table = Object.keys(obj)[0];
+        console.log('include.....', obj['include']);
         let table = obj['table'];
+        let include = obj['include'] != null ? obj['include'] : true;
         let joinType = obj['joinType'];
-        let foreignKey = obj['foreignKey'];
+        let foreignKey = obj['foreignKey'] != null ? obj['foreignKey'] : false;
         let alias = `_${table.toLowerCase()}`;
         let asProp = obj['as'];
         let on = obj['on'];
         let where = '';
+        let get = {};
+        let onClause = '';
+        let needSubQuery = obj['get'] != null && obj['get'][0] != "*";
+        //on != null ? onClause = this.prepareOnClause(on) : false;
+        if (on != null) {
+            onClause = this.prepareOnClause(on);
+            if (foreignKey) {
+                onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}" AND ` + onClause;
+            }
+        }
+        else {
+            onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}"`;
+        }
+        //foreignKey ? onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}" AND ` + onClause : false;
+        get = needSubQuery ? this.prepareSelect(alias, obj['get']) : `DISTINCT "${alias}".*`;
         obj['where'] != null ? where = this.prepareWhere(alias, obj['where']) : false; // optional
-        options['query'].push(`${joinType} "${table}" as "${alias}" ON ("${alias}"."${foreignKey}"="${leftAlias}"."${obj['on']}")`);
+        console.log('onClause', onClause);
+        options['query'].push(`${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''} )`);
         obj['where'] != null ? options['where'].push(`${where}`) : false;
-        includes.push(`, json_agg(DISTINCT "${alias}".*) AS "${asProp}"`);
+        console.log('where from asdfasdfasdfasdf', where);
+        let subs = needSubQuery ? `(select view from (select ${get} from "${table}" WHERE ${where.length > 0 ? where : ''} limit 1 ) as view)` : '';
+        console.log('onclude -------', include);
+        if (include) {
+            !needSubQuery ? includes.push(`, json_agg(${get}) AS "${asProp}"`) : includes.push(`, json_agg(${subs}) AS "${asProp}"`);
+        }
+        console.log('get', get);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
             if (obj.hasOwnProperty(key) && key == "join") {
