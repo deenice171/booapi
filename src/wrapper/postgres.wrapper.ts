@@ -263,7 +263,7 @@ export class PSQLWrapper {
         }
         join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
-        join.where.length ? query += ` AND ${join.where}` : false;
+        join.where.length > 0 ? query += ` AND ${join.where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
