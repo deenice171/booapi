@@ -8,35 +8,20 @@ import { BaseController } from '../controllers/base.controller';
 import { BaseRouter } from '../routes/base.router';
 import { Request, Response, NextFunction } from 'express';
 
-export class Tank extends BaseModel {
+export class BookType extends BaseModel {
 
     model: any;
 
     constructor(public options: any, public name: string) {
         // call the super class and create the model
-        super(options, name, { // must use mongoose.Schema syntax
+        super(options, name, {
             id: { type: Number, key: 'primary' },
-            tank_name: { type: String, maxlength: 24 },
-            serial_number: { type: String, maxlength: 24 },
-            gallons: { type: Number },
-            //addressId: { type: Number, key: 'foreign', references: { table: "Address", foreignKey: 'id' } },
-            //tankTypeId: { type: Number, key: 'forign', references: { table: "TankType", foreignKey: 'id' } },
-            //tankDeviceId: { type: Number, key: 'foreign', references: { table: "TankDevice", foreignKey: 'id' } },
-            //productId: { type: Number, key: 'foreign', references: { table: "Product", foreignKey: 'id' } },
-            //clientId: { type: Number, key: 'foreign', references: { table: "Client", foreignKey: 'id' } },
-            user_id: {
-                type: Number,
-                key: 'foreign',
-                references: { table: 'User', foreignKey: 'id' },
-                onDelete: 'cascade',
-                onUpdate: 'cascade'
-            },
+            description: {type:String, maxlength:50},
             active: { type: Boolean, default: true },
             created_at: { type: Date, default: Date.now() },
             updated_at: { type: Date, default: Date.now() },
             deleted_at: { type: Date, default: Date.now() }
         });
-
         // create a controller
         this.model.controller = new BaseController(this.options, this.name, this.model);
         // create a router

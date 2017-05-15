@@ -319,47 +319,84 @@ Response:
 The second flexible endpoints retrieve any data the user specify within the request object. For example, a request payload of:
 ```
 {
-  "get": ["*"],
-  "left_outer_join": [{
-        "DeliveryOrder": "tankId",
-        "on": "id",
-        "as": "deliveryOrders",
-        "left_outer_join":{
-        	"Product":"id",
-        	"on":"productId",
-        	"as":"product"
-        }
-    },{
-        "WorkOrder": "clientId",
-        "on": "clientId",
-        "as": "tankType"
-    }
-  ],
-  "where": {
-    "isActive": 1,
-    "id": 815
-  },
-  "group": [
-  		"id"
-  	],
-  "sort": {
-    "id": "ASC",
-    "clientId": "DESC"
-  }
- }
+	"get":["*"],
+	"join":[
+		{
+			"table":"BookUser",
+			"joinType":"left outer join",
+			"as":"bookUsers",
+			"on":[
+					{"BookUser":"user_id", "User":"id"} // supports multiple conditions
+				],
+			"where":{
+				"active":true
+			},
+			"include":false, // do join but exclude results from returned object
+			"join":{
+				"table":"Book",
+				"joinType":"full join",
+				"as":"books",
+				"get":["*"], // support "*" or comma separated values. If "get" is not specified, then "*"
+				"on":[
+					{"Book":"id", "BookUser":"book_id"},
+					{"User":"id", "BookUser":"user_id"}
+				],
+				"where":{
+					"active":true
+				}
+			}
+		},
+		{
+			"table":"Tank",
+			"joinType":"inner join",
+			"as":"tanks",
+			"get":["*"],
+			"on":[
+				{"User":"id", "Tank":"user_id"}
+			],
+			"where":{
+				"active":true
+			}
+		}
+	],
+	"where":{
+		"active":true,
+		"id":1
+	},
+	"group":[
+		"id"
+	],
+	"sort":{
+		"id":"ASC"
+	}, 
+  "limit":1
+}
 ```
 
-will produce and execute the following sql command
+will produce and execute the following sql command:
 
 ```
-SELECT "_tank".*, json_agg("_deliveryorder".*) AS "DeliveryOrder" , json_agg("_product".*) AS "Product" , json_agg("_workorder".*) AS "WorkOrder" FROM "Tank" as "_tank" LEFT OUTER JOIN "DeliveryOrder" as "_deliveryorder" ON("_deliveryorder"."tankId"="_tank"."id") LEFT OUTER JOIN "Product" as "_product" ON("_product"."id"="_deliveryorder"."productId") LEFT OUTER JOIN "WorkOrder" as "_workorder" ON ("_workorder"."clientId"="_tank"."clientId") WHERE "_tank"."isActive"=1 AND "_tank"."id"=815 GROUP BY "_tank"."id" ORDER BY "_tank"."id" ASC, "_tank"."clientId" DESC
+SELECT "_user".*, 
+	json_agg(DISTINCT "_book".*) AS "books", 
+  json_agg(DISTINCT "_tank".*) AS "tanks" 
+FROM "User" as "_user" 
+	left outer join "BookUser" as "_bookuser" ON ("_bookuser"."user_id"="_user"."id" ) 
+  	full join "Book" as "_book" ON ("_book"."id"="_bookuser"."book_id" AND "_user"."id"="_bookuser"."user_id" ) 
+	inner join "Tank" as "_tank" ON ("_user"."id"="_tank"."user_id" ) 
+WHERE "_user"."active"=true 
+AND "_user"."id"=1 
+AND "_bookuser"."active"=true 
+AND "_book"."active"=true 
+AND "_tank"."active"=true 
+GROUP BY "_user"."id" 
+ORDER BY "_user"."id" ASC
+LIMIT 1;
 ```
 
 This endpoint supports get * or a comma separated string that corresponds to the property within the select clause.
 
 ### Joins
-Supports `Inner Join`, `Outer Join`, `Left Outer Join`, `Full Join`
-Supports all the major joins, including nested joins
+Supports all joins types ie. `Inner Join`, `Outer Join`, `Left Outer Join`, `Full Join`
 
 Besides the "get" property, all other property is optional
 
@@ -368,34 +405,59 @@ Endpoint: `http://localhost:3000/api/v1/<model>/get`
 Request:
 ```
 {
-  "get": ["*"],
-  "left_outer_join": [{
-        "DeliveryOrder": "tankId",
-        "on": "id",
-        "as": "deliveryOrders",
-        "left_outer_join":{
-        	"Product":"id",
-        	"on":"productId",
-        	"as":"product"
-        }
-    },{
-        "WorkOrder": "clientId",
-        "on": "clientId",
-        "as": "tankType"
-    }
-  ],
-  "where": {
-    "isActive": 1,
-    "id": 815
-  },
-  "group": [
-  		"id"
-  	],
-  "sort": {
-    "id": "ASC",
-    "clientId": "DESC"
-  }
- }
+	"get":["*"],
+	"join":[
+		{
+			"table":"BookUser",
+			"joinType":"left outer join",
+			"as":"bookUsers",
+			"on":[
+					{"BookUser":"user_id", "User":"id"}
+				],
+			"where":{
+				"active":true
+			},
+			"include":false,
+			"join":{
+				"table":"Book",
+				"joinType":"full join",
+				"as":"books",
+				"get":["*"],
+				"on":[
+					{"Book":"id", "BookUser":"book_id"},
+					{"User":"id", "BookUser":"user_id"}
+				],
+				"where":{
+					"active":true
+				}
+			}
+		},
+		{
+			"table":"Tank",
+			"joinType":"inner join",
+	
+			"as":"tanks",
+			"get":["*"],
+			"on":[
+				{"User":"id", "Tank":"user_id"}
+			],
+			"where":{
+				"active":true
+			}
+		}
+	],
+	"where":{
+		"active":true,
+		"id":1
+	},
+	"group":[
+		"id"
+	],
+	"sort":{
+		"id":"ASC"
+	},
+	"limit":1
+}
 ```
 Response:
 ```

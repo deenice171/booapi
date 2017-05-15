@@ -62,32 +62,32 @@ export class PSQLWrapper {
                         str = `"${key}" integer references "${foreignTable}"("${foreignKey}")`;
                         onDelete ? str += ` on delete ${onDelete}` : false;
                         onUpdate ? str += ` on update ${onUpdate}` : false;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == Number && (keyType == false):
                         str = `"${key}" integer`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == String:
                         str = `"${key}" varchar(${maxLength})`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                     case type == Boolean:
                         str = `"${key}" boolean default ${defaultVal}`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str); //default to true
                         break;
                     case type == Date:
                         str = `"${key}" timestamp`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str); //default to true
                         break;
                     default:
                         str = `"${key}" varchar(${maxLength})`;
-                        unique ? str += ` unique`: false;
+                        unique ? str += ` unique` : false;
                         arr.push(str);
                         break;
                 }
@@ -208,7 +208,7 @@ export class PSQLWrapper {
             });
         });
     }
-
+    /*
     getJoinType(joinOption: any) {
         switch (joinOption) {
             case 'inner_join':
@@ -225,6 +225,7 @@ export class PSQLWrapper {
                 return 'INNER JOIN';
         }
     }
+    */
 
     get(req: Request, res: Response, next: NextFunction, callback: Function) {
         let leftAlias = `_${this.table.toLowerCase()}`,
@@ -232,36 +233,19 @@ export class PSQLWrapper {
             select: any = req.body.get != null ? this.prepareSelect(leftAlias, req.body.get) : false,
             join: any;
 
-        let joinOption = '',
-            arr: any = {
-                item: [], option: []
-            };
-        switch (true) {
-            case req.body.inner_join != null:
-                joinOption = 'INNER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.inner_join, arr, []);
-                break;
-            case req.body.outer_join != null:
-                joinOption = 'OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.outer_join, arr, []);
-                break;
-            case req.body.left_outer_join != null:
-                joinOption = 'LEFT OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.left_outer_join, arr, []);
-                break;
-            case req.body.full_outer_join != null:
-                joinOption = 'FULL OUTER JOIN';
-                join = this.prepareJoins(leftAlias, req.body.full_outer_join, arr, []);
-                break;
-            case req.body.cross_join != null:
-                joinOption = 'CROSS JOIN';
-                join = this.prepareJoins(leftAlias, req.body.cross_join, arr, []);
-                break;
-            default:
-                joinOption = 'INNER JOIN';
-                join = false;
-                break;
+        let options: Object = {
+                query: [],
+                joinType: [],
+                where: []
+            },
+            includes: Array<string> = [];
+        
+
+        if (req.body.join != null) {
+           // joinOption = req.body.join[0].joinType;
+            join = this.prepareJoins(leftAlias, req.body.join, options, includes);
         }
+
         let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false,
             group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select, join) : false,
             sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false,
@@ -274,13 +258,14 @@ export class PSQLWrapper {
         } else {
             query += select + `${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
-        join ? query += ` ${joinOption} ${join.query}` : false;
+        join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
+        join.where.length ? query += ` AND ${join.where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
 
-        //console.log('query', query);
+        console.log('query', query);
         this.exec(req, res, next, (client: any, done: any) => {
             client.query(query, (err: any, resp: any) => {
                 done(err);
@@ -380,6 +365,26 @@ export class PSQLWrapper {
         return arr.join(',');
     }
 
+    prepareOnClause(array: Array<Object>) {
+        //const arr = array;
+        let arr: Array<any> = [];
+        for (let item in array) {
+            let obj = array[item];
+            //console.log('obj------>', obj);
+            let table1 = Object.keys(obj)[0];
+            let table2 = Object.keys(obj)[1];
+            let table1Key = obj[table1];
+            let table2Key = obj[table2];
+            arr.push(`"_${table1.toLowerCase()}"."${table1Key}"="_${table2.toLowerCase()}"."${table2Key}"`);
+        }
+        //let onClause = ` AND ` + arr.join(' AND ');
+        //console.log('onCluase from lll', onClause);
+        // return onClause;
+        //arr = arr.join(' AND ');
+        return arr.join(' AND ');
+
+    }
+
     prepareSelect(leftAlias: string, array: Array<string>) {
         let arr: Array<any> = [];
         if (array[0] == "*") {
@@ -431,51 +436,129 @@ export class PSQLWrapper {
         return arr.join(', ');
     }
 
-    prepareJoins(leftAlias: string, joins: Array<Object>, arr: Object, inc: Array<any>) {
+    prepareJoins(leftAlias: string, joins: Array<Object>, options: Object, includes: Array<any>) {
 
         joins.forEach((props) => {
-            this.prepareJoin(leftAlias, props, arr, inc);
+            this.prepareJoin(leftAlias, props, options, includes);
         });
-        let query = arr['item'].join(` LEFT OUTER JOIN `);
-        // let test = arr['item'].map((join:any, index:number, array:Array<any>) => {
+        let query = options['query'].join(` `);
+        let where: string = ``;
+
+        //options['where'].length > 0 ? where += ` AND ` : false;
+        options['where'].length > 0 ? where += options['where'].join(` AND `) : false;
+        //let where = options['where'].join(` `);
+        // let test = options['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
-        // return join + ` ${arr['option'][index]} `
+        // return join + ` ${options['option'][index]} `
         //});
-        //console.log('test', test);
-        let include = inc.join(' ');
+        //console.log('where', where);
+
+        let include = includes.join('');
 
         return {
             query: query,
-            include: include
+            include: include,
+            where: where
         }
 
     }
-    prepareJoin(leftAlias: string, props: Object, arr: Object, inc: Array<any>) {
+    prepareJoin(leftAlias: string, props: Object, options: Object, includes: Array<any>) {
         const obj = props;
         // let arr: Array<any> = [];
         //console.log('obj', obj);
-        let table = Object.keys(obj)[0];
-        let alias = `_${table.toLowerCase()}`;
+        //let table = Object.keys(obj)[0];
+        //console.log('include.....', obj['include']);
+        let count = options['query'].length;
 
-        arr['item'].push(`"${table}" as "${alias}" ON ("${alias}"."${obj[table]}"="${leftAlias}"."${obj['on']}")`);
-        inc.push(`, json_agg("${alias}".*) AS "${table}"`);
+        let table: string = obj['table'];
+        let include: boolean = obj['include'] != null ? obj['include'] : true;
+        let joinType: string = obj['joinType']
+        let foreignKey: any = obj['foreignKey'] != null ? obj['foreignKey'] : false;
+        let alias: string = `_${table.toLowerCase()}`;
+        let asProp: string = obj['as'];
+        let on: Array<Object> = obj['on'];
+        let where: string = '';
+        let get: Object = {};
+        let onClause: string = '';
+
+        let needSubQuery: boolean = obj['get'] != null && obj['get'][0] != "*";
+
+        //on != null ? onClause = this.prepareOnClause(on) : false;
+        if (on != null) {
+            onClause = this.prepareOnClause(on);
+            if (foreignKey) {
+                onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}" AND ` + onClause;
+            }
+        } else {
+            onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}"`;
+        }
+        //foreignKey ? onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}" AND ` + onClause : false;
+        get = needSubQuery ? this.prepareSelect(alias, obj['get']) : `DISTINCT "${alias}".*`;
+        obj['where'] != null ? where = this.prepareWhere(alias, obj['where']) : false; // optional
+        //console.log('onClause', onClause);
+
+        let query = `${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''})`;
+        options['query'].push(`${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''} )`);
+
+        obj['where'] != null ? options['where'].push(`${where}`) : false;
+        //console.log('where from asdfasdfasdfasdf', where);
+        let subs: string = needSubQuery ? `(select view from (select ${get} from "${table}"  WHERE ${where.length > 0 ? where : ''} limit 1 ) as view)` : '';
+        //console.log('onclude -------', include);
+        if (include) {
+            !needSubQuery ? includes.push(`, json_agg(${get}) AS "${asProp}"`) : includes.push(`, json_agg(${subs}) AS "${asProp}"`);
+        }
+
+        //console.log('get', get);
         // arr['option'].push("LEFT OUTER JOIN");
         for (let key in obj) {
-            if (obj.hasOwnProperty(key) && key == "inner_join") {
+            if (obj.hasOwnProperty(key) && key == "join") {
                 // console.log("from obj[key]", obj[key]);
-                arr['option'].push(this.getJoinType(key));
-                this.prepareJoin(alias, obj[key], arr, inc);
-            } else {
+                // arr['type'].push(this.getJoinType(key));
+                /*
+                let joinOn: Array<Object> = obj[key]['on'];
+                let joinOnClause: string = '';
+                let joinAlias: string = `_${obj[key].table.toLowerCase()}`;
 
+                if (joinOn != null) {
+                    joinOnClause = this.prepareOnClause(joinOn);
+                    if (obj[key].foreignKey) {
+                        joinOnClause = `"${alias}"."id"="${joinAlias}"."${obj[key].foreignKey}" AND ` + joinOnClause;
+                    }
+                } else {
+                    joinOnClause = `"${alias}"."id"="${joinAlias}"."${obj[key].foreignKey}"`;
+                }
+
+                let joinQuery = `${obj[key].joinType} "${obj[key].table}" as "${joinAlias}" ON (${joinOnClause.length > 0 ? joinOnClause : ''})`;
+
+                console.log('form llooooop....', options['query']);
+                query = `(${query} ${joinQuery})`;
+                options['query'].push(query);
+                console.log('after transforem', options['query']);
+                */
+                options['joinType'].push(obj[key].joinType);
+                this.prepareJoin(alias, obj[key], options, includes);
+
+            } else {
             }
         };
-        // arr['option'] = 'LEFT OUTER JOIN';
+        //console.log("options['query'].length", options['query'].length,  " count: ", count);
+        //if (count > options['query'].length) { // looped and inserted a query
+
+        // } else {
+        // console.log('insertting------>',`${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''} )`);
+        // options['query'].push(`${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''} )`);
+        // }
+
+        //console.log('index', count);
+        //console.log('test', options['query']);
+        //arr['joinType'] = joinType;
         // console.log('arr', arr);
+        //console.log('arr.joinType', options['joinType']);
         // let query = arr.join(' LEFT OUTER JOIN ');
         // let include = inc.join(' ');
         return {
-            arr: arr,
-            inc: inc
+            options: options, // query, joinType, where
+            includes: includes
         }
 
     }
