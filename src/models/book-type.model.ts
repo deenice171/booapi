@@ -8,7 +8,7 @@ import { BaseController } from '../controllers/base.controller';
 import { BaseRouter } from '../routes/base.router';
 import { Request, Response, NextFunction } from 'express';
 
-export class Book extends BaseModel {
+export class BookType extends BaseModel {
 
     model: any;
 
@@ -16,17 +16,7 @@ export class Book extends BaseModel {
         // call the super class and create the model
         super(options, name, {
             id: { type: Number, key: 'primary' },
-            title: { type: String, maxlength: 24 },
-            author: { type: String, maxlength: 24 },
-            genre: { type: String, maxlength: 24, unique: true },
-            read: { type: Boolean, default: true },
-            book_type_id: {
-                type: Number,
-                key: 'foreign',
-                references: { table: 'BookType', foreignKey: 'id' },
-                onDelete: 'cascade',
-                onUpdate: 'cascade'
-            },
+            description: {type:String, maxlength:50},
             active: { type: Boolean, default: true },
             created_at: { type: Date, default: Date.now() },
             updated_at: { type: Date, default: Date.now() },
