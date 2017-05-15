@@ -219,13 +219,15 @@ class PSQLWrapper {
         let options = {
             query: [],
             joinType: [],
-            where: []
+            where: [],
+            groupBy: []
         }, includes = [];
         if (req.body.join != null) {
             // joinOption = req.body.join[0].joinType;
             join = this.prepareJoins(leftAlias, req.body.join, options, includes);
         }
         let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false, group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select, join) : false, sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false, limit = req.body.limit != null ? req.body.limit : false;
+        join ? group += `, ${join.groupBy}` : false;
         delete req.body.where;
         // console.log('typeof', typeof join);
         if (select[0] == "*") {
@@ -236,7 +238,7 @@ class PSQLWrapper {
         }
         join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
-        join.where.length ? query += ` AND ${join.where}` : false;
+        join.where.length > 0 ? query += ` AND ${join.where}` : false;
         group ? query += ` GROUP BY ${group}` : false;
         sort ? query += ` ORDER BY ${sort}` : false;
         limit ? query += ` LIMIT ${limit}` : false;
@@ -411,8 +413,11 @@ class PSQLWrapper {
         });
         let query = options['query'].join(` `);
         let where = ``;
+        let groupBy = ``;
         //options['where'].length > 0 ? where += ` AND ` : false;
         options['where'].length > 0 ? where += options['where'].join(` AND `) : false;
+        options['groupBy'].length > 0 ? groupBy += options['groupBy'].join(`, `) : false;
+        console.log('groupBy', options['groupBy']);
         //let where = options['where'].join(` `);
         // let test = options['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
@@ -423,7 +428,8 @@ class PSQLWrapper {
         return {
             query: query,
             include: include,
-            where: where
+            where: where,
+            groupBy: groupBy
         };
     }
     prepareJoin(leftAlias, props, options, includes) {
@@ -435,7 +441,7 @@ class PSQLWrapper {
         let count = options['query'].length;
         let table = obj['table'];
         let include = obj['include'] != null ? obj['include'] : true;
-        let joinType = obj['joinType'];
+        let joinType = obj['joinType'] != null ? obj['joinType'] : "INNER JOIN";
         let foreignKey = obj['foreignKey'] != null ? obj['foreignKey'] : false;
         let alias = `_${table.toLowerCase()}`;
         let asProp = obj['as'];
@@ -443,6 +449,7 @@ class PSQLWrapper {
         let where = '';
         let get = {};
         let onClause = '';
+        let returnType = obj['returnType'] != null ? obj['returnType'] : 'array';
         let needSubQuery = obj['get'] != null && obj['get'][0] != "*";
         //on != null ? onClause = this.prepareOnClause(on) : false;
         if (on != null) {
@@ -455,7 +462,7 @@ class PSQLWrapper {
             onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}"`;
         }
         //foreignKey ? onClause = `"${leftAlias}"."id"="${alias}"."${foreignKey}" AND ` + onClause : false;
-        get = needSubQuery ? this.prepareSelect(alias, obj['get']) : `DISTINCT "${alias}".*`;
+        get = needSubQuery ? this.prepareSelect(alias, obj['get']) : returnType == 'array' ? `DISTINCT "${alias}".*` : ` "${alias}".*`;
         obj['where'] != null ? where = this.prepareWhere(alias, obj['where']) : false; // optional
         //console.log('onClause', onClause);
         let query = `${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''})`;
@@ -465,7 +472,13 @@ class PSQLWrapper {
         let subs = needSubQuery ? `(select view from (select ${get} from "${table}"  WHERE ${where.length > 0 ? where : ''} limit 1 ) as view)` : '';
         //console.log('onclude -------', include);
         if (include) {
-            !needSubQuery ? includes.push(`, json_agg(${get}) AS "${asProp}"`) : includes.push(`, json_agg(${subs}) AS "${asProp}"`);
+            if (returnType == 'object') {
+                !needSubQuery ? includes.push(`, row_to_json(${get}, true) AS "${asProp}"`) : includes.push(`, row_to_json(${subs}, true) AS "${asProp}"`);
+                options['groupBy'].push(`"${alias}".*`);
+            }
+            else if (returnType == 'array') {
+                !needSubQuery ? includes.push(`, json_agg(${get}) AS "${asProp}"`) : includes.push(`, json_agg(${subs}) AS "${asProp}"`);
+            }
         }
         //console.log('get', get);
         // arr['option'].push("LEFT OUTER JOIN");
