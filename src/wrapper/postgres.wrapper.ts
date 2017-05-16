@@ -208,24 +208,6 @@ export class PSQLWrapper {
             });
         });
     }
-    /*
-    getJoinType(joinOption: any) {
-        switch (joinOption) {
-            case 'inner_join':
-                return 'INNER JOIN';
-            case 'outer_join':
-                return 'OUTER_JOIN';
-            case 'left_outer_join':
-                return 'LEFT OUTER JOIN';
-            case 'cross_join':
-                return 'CROSS JOIN';
-            case 'full_outer_join':
-                return 'FULL OUTER JOIN';
-            default:
-                return 'INNER JOIN';
-        }
-    }
-    */
 
     get(req: Request, res: Response, next: NextFunction, callback: Function) {
         let leftAlias = `_${this.table.toLowerCase()}`,
@@ -237,10 +219,9 @@ export class PSQLWrapper {
             query: [],
             joinType: [],
             where: [],
-            groupBy:[]
+            group: []
         },
             includes: Array<string> = [];
-
 
         if (req.body.join != null) {
             // joinOption = req.body.join[0].joinType;
@@ -248,19 +229,20 @@ export class PSQLWrapper {
         }
 
         let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false,
-            group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select, join) : false,
+            group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select) : false,
             sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false,
             limit = req.body.limit != null ? req.body.limit : false;
 
-        join ? group += `, ${join.groupBy}` : false;
+        join.group ? group += `,${join.group}` : false;
 
         delete req.body.where;
-        // console.log('typeof', typeof join);
+
         if (select[0] == "*") {
             query += `* ${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         } else {
             query += select + `${join ? join.include : ''} FROM "${this.table}" as "${leftAlias}"`;
         }
+
         join ? query += ` ${join.query}` : false;
         where ? query += ` WHERE ${where}` : false;
         join.where.length > 0 ? query += ` AND ${join.where}` : false;
@@ -413,10 +395,11 @@ export class PSQLWrapper {
         return arr.join(' AND ');
     }
 
-    prepareGroup(leftAlias: string, props: Object, select: string, join: Object) {
+    prepareGroup(leftAlias: string, props: Object, select: string) {
         const obj = props;
         let arr: Array<any> = [],
-            selected = select.split(', ');
+            selected = select.split(', '),
+            output: string = '';
         for (let i in obj) {
             if (obj.hasOwnProperty(i)) {
                 arr.push(`"${leftAlias}"."${obj[i]}"`);
@@ -425,6 +408,7 @@ export class PSQLWrapper {
         arr.filter((item) => {
             return selected.indexOf(item);
         });
+    
         return arr.join(', ');
     }
 
@@ -446,12 +430,12 @@ export class PSQLWrapper {
         });
         let query = options['query'].join(` `);
         let where: string = ``;
-        let groupBy: string = ``;
+        let group: string = ``;
 
         //options['where'].length > 0 ? where += ` AND ` : false;
         options['where'].length > 0 ? where += options['where'].join(` AND `) : false;
-        options['groupBy'].length > 0 ? groupBy += options['groupBy'].join(`, `) : false;
-        console.log('groupBy', options['groupBy']);
+        options['group'].length > 0 ? group += options['group'].join(`, `) : false;
+        console.log('group', options['group']);
         //let where = options['where'].join(` `);
         // let test = options['item'].map((join:any, index:number, array:Array<any>) => {
         // console.log('i', join);
@@ -465,7 +449,7 @@ export class PSQLWrapper {
             query: query,
             include: include,
             where: where,
-            groupBy:groupBy
+            group: group
         }
 
     }
@@ -485,10 +469,11 @@ export class PSQLWrapper {
         let asProp: string = obj['as'];
         let on: Array<Object> = obj['on'];
         let where: string = '';
-        let get: Object = {};
+        let get: string;
         let onClause: string = '';
         let returnType = obj['returnType'] != null ? obj['returnType'] : 'array';
         let needSubQuery: boolean = obj['get'] != null && obj['get'][0] != "*";
+        let group = obj['group'] != null ? obj['group'] : [];
 
         //on != null ? onClause = this.prepareOnClause(on) : false;
         if (on != null) {
@@ -507,16 +492,20 @@ export class PSQLWrapper {
         let query = `${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''})`;
         options['query'].push(`${joinType} "${table}" as "${alias}" ON (${onClause.length > 0 ? onClause : ''} )`);
 
+        needSubQuery ? options['group'].push(this.prepareGroup(alias, group, get)) : false;
         obj['where'] != null ? options['where'].push(`${where}`) : false;
-        //console.log('where from asdfasdfasdfasdf', where);
-        let subs: string = needSubQuery ? `(select view from (select ${get} from "${table}"  WHERE ${where.length > 0 ? where : ''} limit 1 ) as view)` : '';
+        console.log('where from asdfasdfasdfasdf', where.length);
+        let subsWhere = where.length > 0 ? ` WHERE ` + where : '';
+        let subs: string = needSubQuery ? `(select view from (select ${get} from "${table}" ${subsWhere} limit 1 ) as view)` : '';
         //console.log('onclude -------', include);
+        console.log('subswhere', subsWhere);
         if (include) {
             if (returnType == 'object') {
                 !needSubQuery ? includes.push(`, row_to_json(${get}, true) AS "${asProp}"`) : includes.push(`, row_to_json(${subs}, true) AS "${asProp}"`);
-                options['groupBy'].push(`"${alias}".*`);
+                options['group'].push(`"${alias}".*`);
             } else if (returnType == 'array') {
                 !needSubQuery ? includes.push(`, json_agg(${get}) AS "${asProp}"`) : includes.push(`, json_agg(${subs}) AS "${asProp}"`);
+                //options['group'].push(`"${alias}".*`);
             }
         }
 
