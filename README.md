@@ -491,3 +491,4 @@ The above will wire a new API route at `http://localhost:3000/api/v1/<model>/rea
     }
 ```
 
+# BookApi
