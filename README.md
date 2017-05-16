@@ -324,26 +324,33 @@ The second flexible endpoints retrieve any data the user specify within the requ
 		{
 			"table":"BookUser",
 			"joinType":"left outer join",
-			"as":"bookUsers",
+			"include":false, // include result in response payload. default to true
+			"get":["*"], // "*" or comma separated values
+			"as":"bookUsers", // the returned property key
 			"on":[
-					{"BookUser":"user_id", "User":"id"} // supports multiple conditions
+					{"BookUser":"user_id", "User":"id"} // array of join conditions
 				],
 			"where":{
-				"active":true
+				"active":true // object containing return conditions
 			},
-			"include":false, // do join but exclude results from returned object
 			"join":{
 				"table":"Book",
+				"returnType":"object", // return type. supports "object" and "array"
 				"joinType":"full join",
 				"as":"books",
-				"get":["*"], // support "*" or comma separated values. If "get" is not specified, then "*"
+				"get":["id", "title"],
 				"on":[
 					{"Book":"id", "BookUser":"book_id"},
 					{"User":"id", "BookUser":"user_id"}
 				],
 				"where":{
 					"active":true
-				}
+				},	
+				"group":[
+					"id",
+					"title"
+				]
+				
 			}
 		},
 		{
@@ -368,8 +375,8 @@ The second flexible endpoints retrieve any data the user specify within the requ
 	],
 	"sort":{
 		"id":"ASC"
-	}, 
-  "limit":1
+	},
+	"limit":1
 }
 ```
 
@@ -377,20 +384,18 @@ will produce and execute the following sql command:
 
 ```
 SELECT "_user".*, 
-	json_agg(DISTINCT "_book".*) AS "books", 
-  json_agg(DISTINCT "_tank".*) AS "tanks" 
-FROM "User" as "_user" 
-	left outer join "BookUser" as "_bookuser" ON ("_bookuser"."user_id"="_user"."id" ) 
-  	full join "Book" as "_book" ON ("_book"."id"="_bookuser"."book_id" AND "_user"."id"="_bookuser"."user_id" ) 
+	row_to_json((select view from (select "id", "_book"."title" from "Book"  WHERE "_book"."active"=true limit 1 ) as view), true) AS "books", 
+	json_agg(DISTINCT "_tank".*) AS "tanks" FROM "User" as "_user" left outer join "BookUser" as "_bookuser" ON ("_bookuser"."user_id"="_user"."id" ) 
+	full join "Book" as "_book" ON ("_book"."id"="_bookuser"."book_id" AND "_user"."id"="_bookuser"."user_id" ) 
 	inner join "Tank" as "_tank" ON ("_user"."id"="_tank"."user_id" ) 
 WHERE "_user"."active"=true 
 AND "_user"."id"=1 
 AND "_bookuser"."active"=true 
 AND "_book"."active"=true 
 AND "_tank"."active"=true 
-GROUP BY "_user"."id" 
-ORDER BY "_user"."id" ASC
-LIMIT 1;
+GROUP BY "_user"."id","_book"."id", "_book"."title", "_book".* 
+ORDER BY "_user"."id" ASC 
+LIMIT 1
 ```
 
 This endpoint supports get * or a comma separated string that corresponds to the property within the select clause.
