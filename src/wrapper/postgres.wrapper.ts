@@ -227,14 +227,23 @@ export class PSQLWrapper {
             // joinOption = req.body.join[0].joinType;
             join = this.prepareJoins(leftAlias, req.body.join, options, includes);
         }
+        let where: string = '',
+            group: string = '',
+            sort: string = '',
+            limit: number = null;
 
-        let where = req.body.where != null ? this.prepareWhere(leftAlias, req.body.where) : false,
-            group = req.body.group != null ? this.prepareGroup(leftAlias, req.body.group, select) : false,
-            sort = req.body.sort != null ? this.prepareSort(leftAlias, req.body.sort) : false,
-            limit = req.body.limit != null ? req.body.limit : false;
+        req.body.where != null ? where = this.prepareWhere(leftAlias, req.body.where) : false,
+            req.body.group != null ? group = this.prepareGroup(leftAlias, req.body.group, select) : false,
+            req.body.sort != null ? sort = this.prepareSort(leftAlias, req.body.sort) : false,
+            req.body.limit != null ? limit = req.body.limit : false;
 
-        join.group ? group += `,${join.group}` : false;
-
+        if (join.group && group.length > 0) {
+            group += `,${join.group}`;
+        } else if (join.group) {
+            group += `${join.group}`
+        }
+        //join.group && group.length > 0 ? group += `,${join.group}` : false;
+        //join.group && group.length > 0 ? group += `,${join.group}` : false;
         delete req.body.where;
 
         if (select[0] == "*") {
@@ -408,7 +417,7 @@ export class PSQLWrapper {
         arr.filter((item) => {
             return selected.indexOf(item);
         });
-    
+
         return arr.join(', ');
     }
 
