@@ -162,8 +162,8 @@ export class API {
     private initialize(app: express.Express, options: IOption) {
         // this.configureDatabase(options);
         this.configureMiddleware(app);
-        this.configureJWT(app);
-        this.configureCors(app);
+        //this.configureJWT(app);
+       // this.configureCors(app);
         this.configureRoutes(app);
     }
 
