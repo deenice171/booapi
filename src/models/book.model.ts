@@ -20,6 +20,7 @@ export class Book extends BaseModel {
             author: { type: String, maxlength: 24 },
             genre: { type: String, maxlength: 24 },
             read: { type: Boolean, default: true },
+            image_url: { type: String, maxlength: 300 },
             book_type_id: {
                 type: Number,
                 key: 'foreign',
