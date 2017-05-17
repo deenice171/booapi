@@ -163,7 +163,7 @@ export class API {
         // this.configureDatabase(options);
         this.configureMiddleware(app);
         //this.configureJWT(app);
-       // this.configureCors(app);
+        this.configureCors(app);
         this.configureRoutes(app);
     }
 
