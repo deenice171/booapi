@@ -18,7 +18,7 @@ export class Book extends BaseModel {
             id: { type: Number, key: 'primary' },
             title: { type: String, maxlength: 24 },
             author: { type: String, maxlength: 24 },
-            genre: { type: String, maxlength: 24, unique: true },
+            genre: { type: String, maxlength: 24 },
             read: { type: Boolean, default: true },
             book_type_id: {
                 type: Number,
