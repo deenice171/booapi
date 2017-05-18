@@ -23,6 +23,7 @@ export class User extends BaseModel {
             username: { type: String },
             password: { type: String, maxlength: 200 },
             role: { type: Array },
+            image_url:{ type: String },
             super_admin: { type: Boolean, default: false },
             is_activated: { type: Boolean, default: false },
             active: { type: Boolean, default: true },
